@@ -28,6 +28,8 @@ const requiredFiles = [
   "apps/ios/PiperAppTests/PiperProtocolTests.swift",
   "apps/ios/PiperAppTests/SessionHistoryStoreTests.swift",
   "docs/pricing.md",
+  "docs/privacy.md",
+  "docs/push-notifications.md",
 ];
 
 for (const file of requiredFiles) {

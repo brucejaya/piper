@@ -10,5 +10,5 @@
     "forceConsistentCasingInFileNames": true,
     "types": ["node"]
   },
-  "include": ["src", "test-peer", "scripts"]
+  "include": ["src", "test-peer", "scripts", "services"]
 }

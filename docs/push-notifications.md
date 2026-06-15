@@ -1,0 +1,34 @@
+# Push Notifications
+
+Push exists only to wake the official iOS app or draw the user's attention. It is not a command relay, session store, protocol authority, or replacement for the paired Piper connection.
+
+## Payload Boundary
+
+Push payloads may include:
+
+- Payload version.
+- Event type: `approval`, `auth`, `activity`, or `presence`.
+- Short non-secret agent identifier.
+- Opaque event reference.
+- Issue time and TTL.
+
+Push payloads must not include:
+
+- Prompts.
+- Tool inputs.
+- Agent messages.
+- Session transcripts.
+- Credentials, cookies, tokens, one-time codes, or passkeys.
+- Approval details that are sufficient to make a decision from the notification alone.
+
+The app should reconnect over Piper after the user opens the notification, then fetch approval or activity details through the paired encrypted connection.
+
+## Registration Boundary
+
+Push registration creates a relationship between an iOS installation and an agent instance. It does not pair the app as a protocol peer. Protocol trust still requires the iOS peer public key to be present in the agent allowlist.
+
+Users must be able to revoke push registration from the app and from the agent side. Revoking push should not remove protocol pairing unless the user also revokes the peer key.
+
+## Implementation Notes
+
+The current repository defines the wake payload contract in `services/push/src/payload.ts`. A later APNs service should consume that contract and keep all command, approval, auth, and session data on the peer-to-peer Piper channel.

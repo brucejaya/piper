@@ -12,6 +12,7 @@
     "peer": "tsx test-peer/cli.ts",
     "clitest": "tsx scripts/clitest.ts",
     "ioscheck": "tsx scripts/ios-scaffold-check.ts",
+    "pushtest": "tsx scripts/pushtest.ts",
     "selftest": "tsx scripts/selftest.ts",
     "livetest": "tsx scripts/livetest.ts",
     "tooltest": "tsx scripts/tooltest.ts",

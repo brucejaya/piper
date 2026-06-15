@@ -35,6 +35,7 @@ details live in [docs/pairing.md](docs/pairing.md).
 npm install
 npm run typecheck
 npm run clitest
+npm run pushtest
 npm run selftest
 npm run livetest
 ```
@@ -110,6 +111,7 @@ src/transport.ts      HyperDHT server, allowlist gate, peers
 src/index.ts          Pi extension: bridges Pi <-> transport
 test-peer/cli.ts      terminal reference manager
 scripts/clitest.ts    offline reference CLI parser/identity checks
+scripts/pushtest.ts   offline push wake payload privacy checks
 scripts/selftest.ts   offline transport/trust integration test
 scripts/livetest.ts   live Pi bridge integration test
 scripts/tooltest.ts   live tool forwarding + approvals test
