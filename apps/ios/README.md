@@ -58,6 +58,7 @@ The scaffold includes:
 - Billing model and StoreKit client boundary for monthly, annual, and lifetime products.
 - Settings purchase surface with restore support and lifetime-first offer ordering.
 - Notification permission state for future APNs wake registration.
+- Push wake payload parsing and agent reconnect routing for notification taps.
 - Local session history persistence for recent activity while the app is offline.
 - Local agent registry persistence and removal so paired agent rows can be managed on-device.
 - Native presentation mapping for built-in typed surfaces with safe fallback rendering.

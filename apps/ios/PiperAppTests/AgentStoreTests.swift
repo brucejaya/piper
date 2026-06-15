@@ -92,6 +92,49 @@ final class AgentStoreTests: XCTestCase {
         XCTAssertTrue(store.agents.isEmpty)
     }
 
+    func testWakePayloadReconnectsMatchingAgent() async throws {
+        let bridge = MockPiperBridge()
+        let store = AgentStore(bridge: bridge, identityStore: MemoryPeerIdentityStore())
+        let key = String(repeating: "a", count: 64)
+
+        store.addAgent(instanceKey: key)
+        let payload = PushWakePayload(
+            v: 1,
+            event: .approval,
+            agent: "aaaaaaaaaaaa",
+            ref: "approval-1",
+            issuedAt: Date(),
+            ttlSeconds: 300
+        )
+
+        store.handleWake(payload)
+        try await Task.sleep(nanoseconds: 50_000_000)
+
+        XCTAssertEqual(store.agents.first?.state, .connected)
+    }
+
+    func testExpiredWakePayloadDoesNotReconnectAgent() async throws {
+        let bridge = MockPiperBridge()
+        let store = AgentStore(bridge: bridge, identityStore: MemoryPeerIdentityStore())
+        let key = String(repeating: "a", count: 64)
+        let now = Date()
+
+        store.addAgent(instanceKey: key)
+        let payload = PushWakePayload(
+            v: 1,
+            event: .approval,
+            agent: "aaaaaaaaaaaa",
+            ref: "approval-1",
+            issuedAt: now.addingTimeInterval(-301),
+            ttlSeconds: 300
+        )
+
+        store.handleWake(payload, now: now)
+        try await Task.sleep(nanoseconds: 50_000_000)
+
+        XCTAssertEqual(store.agents.first?.state, .disconnected)
+    }
+
     func testStoreLoadsCachedSessionEvents() {
         let cached = SessionEvent(
             id: "cached",

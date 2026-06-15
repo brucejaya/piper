@@ -5,6 +5,7 @@ final class NotificationStore: ObservableObject {
     @Published private(set) var state: NotificationRegistrationState = .unknown
     @Published private(set) var isLoading = false
     @Published private(set) var lastError: String?
+    @Published private(set) var lastWakePayload: PushWakePayload?
 
     private let client: NotificationClient
 
@@ -33,6 +34,18 @@ final class NotificationStore: ObservableObject {
                 lastError = String(describing: error)
             }
             isLoading = false
+        }
+    }
+
+    func receiveWake(userInfo: [AnyHashable: Any], now: Date = Date()) -> PushWakePayload? {
+        do {
+            let payload = try PushWakePayload.decode(userInfo: userInfo, now: now)
+            lastWakePayload = payload
+            lastError = nil
+            return payload
+        } catch {
+            lastError = String(describing: error)
+            return nil
         }
     }
 }

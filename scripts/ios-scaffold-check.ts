@@ -27,6 +27,7 @@ const requiredFiles = [
   "apps/ios/PiperApp/Identity/PeerIdentityStore.swift",
   "apps/ios/PiperApp/Identity/KeychainPeerIdentityStore.swift",
   "apps/ios/PiperApp/Networking/PiperTransportSession.swift",
+  "apps/ios/PiperApp/Notifications/PushWakePayload.swift",
   "apps/ios/PiperApp/State/AgentStore.swift",
   "apps/ios/PiperApp/Surfaces/SurfacePresentation.swift",
   "apps/ios/PiperApp/Views/AgentDashboardView.swift",
@@ -38,6 +39,7 @@ const requiredFiles = [
   "apps/ios/PiperAppTests/BillingStoreTests.swift",
   "apps/ios/PiperAppTests/NotificationStoreTests.swift",
   "apps/ios/PiperAppTests/PiperProtocolTests.swift",
+  "apps/ios/PiperAppTests/PushWakePayloadTests.swift",
   "apps/ios/PiperAppTests/PiperWireCodecTests.swift",
   "apps/ios/PiperAppTests/SessionHistoryStoreTests.swift",
   "apps/ios/PiperAppTests/SurfacePresentationTests.swift",
@@ -75,6 +77,12 @@ assert.match(settingsView, /Pairing and agent access still require the agent all
 const notificationStore = readFileSync(join(root, "apps/ios/PiperApp/Notifications/NotificationStore.swift"), "utf8");
 assert.match(notificationStore, /NotificationStore/);
 assert.match(notificationStore, /requestAuthorization/);
+assert.match(notificationStore, /receiveWake/);
+
+const pushWakePayload = readFileSync(join(root, "apps/ios/PiperApp/Notifications/PushWakePayload.swift"), "utf8");
+assert.match(pushWakePayload, /enum PushWakeEvent/);
+assert.match(pushWakePayload, /struct PushWakePayload/);
+assert.match(pushWakePayload, /disallowedFieldPattern/);
 
 const appStoreRelease = readFileSync(join(root, "docs/app-store-release.md"), "utf8");
 assert.match(appStoreRelease, /TestFlight Validation/);
@@ -127,6 +135,7 @@ assert.match(agentModels, /struct PendingAuthRequest[\s\S]*localDevelopmentHosts
 const agentStore = readFileSync(join(root, "apps/ios/PiperApp/State/AgentStore.swift"), "utf8");
 assert.match(agentStore, /func removeAgent/);
 assert.match(agentStore, /locallyRemovedInstanceKeys/);
+assert.match(agentStore, /func handleWake/);
 
 const agentDashboard = readFileSync(join(root, "apps/ios/PiperApp/Views/AgentDashboardView.swift"), "utf8");
 assert.match(agentDashboard, /onDelete/);

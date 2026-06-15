@@ -80,6 +80,15 @@ final class AgentStore: ObservableObject {
         }
     }
 
+    func handleWake(_ payload: PushWakePayload, now: Date = Date()) {
+        guard payload.isExpired(now: now) == false,
+              let agent = agents.first(where: { Self.matchesWakeAgent($0, identifier: payload.agent) }) else {
+            return
+        }
+
+        connect(agent)
+    }
+
     func sendPrompt(_ text: String, to agent: AgentConnection) {
         Task {
             try? await bridge.sendPrompt(instanceKey: agent.instanceKey, text: text, streamingBehavior: nil)
@@ -324,6 +333,13 @@ final class AgentStore: ObservableObject {
 
     static func shortKey(_ key: String) -> String {
         key.count > 13 ? "\(key.prefix(12))..." : key
+    }
+
+    private static func matchesWakeAgent(_ agent: AgentConnection, identifier: String) -> Bool {
+        agent.id == identifier ||
+            agent.shortKey == identifier ||
+            agent.instanceKey == identifier ||
+            agent.instanceKey.hasPrefix(identifier)
     }
 
     private func string(_ key: String, in payload: [String: JSONValue]) -> String? {

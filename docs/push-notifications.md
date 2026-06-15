@@ -23,6 +23,8 @@ Push payloads must not include:
 
 The app should reconnect over Piper after the user opens the notification, then fetch approval or activity details through the paired encrypted connection.
 
+The iOS app mirrors this boundary with a `PushWakePayload` parser. A valid, unexpired wake hint may select a local agent row and trigger reconnect; it must not populate approval, auth, prompt, transcript, or session detail UI from the push payload itself.
+
 ## Registration Boundary
 
 Push registration creates a relationship between an iOS installation and an agent instance. It does not pair the app as a protocol peer. Protocol trust still requires the iOS peer public key to be present in the agent allowlist.
