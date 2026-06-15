@@ -28,6 +28,7 @@ const requiredFiles = [
   "apps/ios/PiperApp/Identity/KeychainPeerIdentityStore.swift",
   "apps/ios/PiperApp/Networking/PiperTransportSession.swift",
   "apps/ios/PiperApp/State/AgentStore.swift",
+  "apps/ios/PiperApp/Surfaces/SurfacePresentation.swift",
   "apps/ios/PiperApp/Views/AgentDashboardView.swift",
   "apps/ios/PiperApp/Views/SettingsView.swift",
   "apps/ios/PiperApp/Views/SessionView.swift",
@@ -39,6 +40,7 @@ const requiredFiles = [
   "apps/ios/PiperAppTests/PiperProtocolTests.swift",
   "apps/ios/PiperAppTests/PiperWireCodecTests.swift",
   "apps/ios/PiperAppTests/SessionHistoryStoreTests.swift",
+  "apps/ios/PiperAppTests/SurfacePresentationTests.swift",
   "apps/ios/PiperAppTests/TransportPiperBridgeTests.swift",
   "docs/pricing.md",
   "docs/app-store-release.md",
@@ -121,6 +123,11 @@ assert.match(agentModels, /enum ApprovalStatus/);
 
 const sessionView = readFileSync(join(root, "apps/ios/PiperApp/Views/SessionView.swift"), "utf8");
 assert.match(sessionView, /ApprovalCard/);
+assert.match(sessionView, /SurfaceRow/);
+
+const surfacePresentation = readFileSync(join(root, "apps/ios/PiperApp/Surfaces/SurfacePresentation.swift"), "utf8");
+assert.match(surfacePresentation, /git\.commit/);
+assert.match(surfacePresentation, /case fallback/);
 
 console.log("[ok] iOS scaffold files and project spec are present");
 console.log("\nIOS SCAFFOLD CHECKS PASSED");

@@ -31,13 +31,7 @@ struct SessionView: View {
 
                 Section("Recent Activity") {
                     ForEach(store.events.filter { $0.agentId == agent.id || $0.agentId == "approval" }) { event in
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(event.title)
-                                .font(.subheadline)
-                            Text(event.detail)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
+                        SessionEventRow(event: event)
                     }
                 }
             }
@@ -63,6 +57,54 @@ struct SessionView: View {
                 }
             }
         }
+    }
+}
+
+private struct SessionEventRow: View {
+    let event: SessionEvent
+
+    var body: some View {
+        if let surface = event.surface {
+            SurfaceRow(presentation: SurfacePresentation.make(from: surface))
+        } else {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(event.title)
+                    .font(.subheadline)
+                Text(event.detail)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+}
+
+private struct SurfaceRow: View {
+    let presentation: SurfacePresentation
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(presentation.title)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                Spacer()
+                if let status = presentation.status {
+                    Text(status)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            if let subtitle = presentation.subtitle {
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Text(presentation.detail)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(4)
+        }
+        .padding(.vertical, 4)
     }
 }
 

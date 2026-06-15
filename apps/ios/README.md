@@ -60,6 +60,7 @@ The scaffold includes:
 - Notification permission state for future APNs wake registration.
 - Local session history persistence for recent activity while the app is offline.
 - Local agent registry persistence so paired agent rows survive app restarts.
+- Native presentation mapping for built-in typed surfaces with safe fallback rendering.
 
 ## Next Mac Tasks
 
