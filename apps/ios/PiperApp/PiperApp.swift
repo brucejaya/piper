@@ -4,7 +4,7 @@ import SwiftUI
 struct PiperApp: App {
     @StateObject private var store = AgentStore(
         bridge: MockPiperBridge(),
-        identityStore: MemoryPeerIdentityStore()
+        identityStore: KeychainPeerIdentityStore()
     )
 
     var body: some Scene {

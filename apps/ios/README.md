@@ -32,6 +32,16 @@ Run tests:
 xcodebuild test -project Piper.xcodeproj -scheme Piper -destination 'platform=iOS Simulator,name=iPhone 15'
 ```
 
+Or use the repo helper from the root:
+
+```bash
+bash scripts/ios-mac-build.sh
+```
+
+Set `IOS_DESTINATION` to target a different installed simulator.
+
+GitHub Actions also runs this helper on macOS for changes under `apps/ios`.
+
 ## Current Scope
 
 The scaffold includes:
@@ -42,12 +52,12 @@ The scaffold includes:
 - Piper protocol DTOs matching `docs/protocol.md`.
 - Bridge abstraction matching `docs/ios-networking-spike.md`.
 - Mock bridge for UI/state development before the Bare/Pear-end bridge lands.
-- Peer identity store protocol with an in-memory development implementation.
+- Peer identity store protocol with Keychain production storage and an in-memory test implementation.
 
 ## Next Mac Tasks
 
 1. Generate the Xcode project with XcodeGen.
-2. Replace `MemoryPeerIdentityStore` with a Keychain-backed implementation.
+2. Confirm the GitHub Actions simulator destination matches the installed runtime.
 3. Add the Bare/Pear-end bridge target or embedded runtime.
 4. Connect `PiperBridge` to the real HyperDHT protocol client.
 5. Prove simulator connection to a local Piper testnet instance.

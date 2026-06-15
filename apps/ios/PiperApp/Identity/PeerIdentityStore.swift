@@ -7,6 +7,9 @@ protocol PeerIdentityStore {
 
 enum PeerIdentityError: Error {
     case invalidSeedLength
+    case keychainReadFailed(OSStatus)
+    case keychainWriteFailed(OSStatus)
+    case randomGenerationFailed(OSStatus)
 }
 
 final class MemoryPeerIdentityStore: PeerIdentityStore {
