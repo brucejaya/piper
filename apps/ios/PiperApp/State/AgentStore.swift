@@ -6,13 +6,22 @@ final class AgentStore: ObservableObject {
     @Published private(set) var events: [SessionEvent] = []
     @Published private(set) var peerSeedAvailable = false
 
+    private static let historyLimit = 500
+
     private let bridge: PiperBridge
     private let identityStore: PeerIdentityStore
+    private let historyStore: SessionHistoryStore
     private var eventTask: Task<Void, Never>?
 
-    init(bridge: PiperBridge, identityStore: PeerIdentityStore) {
+    init(
+        bridge: PiperBridge,
+        identityStore: PeerIdentityStore,
+        historyStore: SessionHistoryStore = MemorySessionHistoryStore()
+    ) {
         self.bridge = bridge
         self.identityStore = identityStore
+        self.historyStore = historyStore
+        self.events = (try? historyStore.loadRecent(limit: Self.historyLimit)) ?? []
         startEventLoop()
         peerSeedAvailable = (try? identityStore.loadOrCreateSeed()) != nil
     }
@@ -86,26 +95,35 @@ final class AgentStore: ObservableObject {
             }
         case .surface(let surface):
             let agentId = surface.source["session"] ?? "unknown"
-            events.insert(SessionEvent(
+            appendEvent(SessionEvent(
                 id: surface.id,
                 agentId: agentId,
                 date: Date(timeIntervalSince1970: TimeInterval(surface.ts) / 1000),
                 title: surface.display?.title ?? surface.summary,
                 detail: surface.fallback,
                 surface: surface
-            ), at: 0)
+            ))
         case .approvalRequest(let id, let toolName, let inputSummary):
-            events.insert(SessionEvent(
+            appendEvent(SessionEvent(
                 id: id,
                 agentId: "approval",
                 date: Date(),
                 title: "Approval requested: \(toolName)",
                 detail: inputSummary,
                 surface: nil
-            ), at: 0)
+            ))
         case .response, .error:
             break
         }
+    }
+
+    private func appendEvent(_ event: SessionEvent) {
+        events.removeAll { $0.id == event.id }
+        events.insert(event, at: 0)
+        if events.count > Self.historyLimit {
+            events = Array(events.prefix(Self.historyLimit))
+        }
+        try? historyStore.append(event, limit: Self.historyLimit)
     }
 
     private func updateAgent(instanceKey: String, update: (inout AgentConnection) -> Void) {

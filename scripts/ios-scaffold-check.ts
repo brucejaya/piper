@@ -15,6 +15,7 @@ const requiredFiles = [
   "apps/ios/PiperApp/Billing/BillingStore.swift",
   "apps/ios/PiperApp/Billing/StoreKitBillingClient.swift",
   "apps/ios/PiperApp/Models/PiperProtocol.swift",
+  "apps/ios/PiperApp/Persistence/SessionHistoryStore.swift",
   "apps/ios/PiperApp/Bridge/PiperBridge.swift",
   "apps/ios/PiperApp/Bridge/MockPiperBridge.swift",
   "apps/ios/PiperApp/Identity/PeerIdentityStore.swift",
@@ -25,6 +26,7 @@ const requiredFiles = [
   "apps/ios/PiperAppTests/AgentStoreTests.swift",
   "apps/ios/PiperAppTests/BillingTests.swift",
   "apps/ios/PiperAppTests/PiperProtocolTests.swift",
+  "apps/ios/PiperAppTests/SessionHistoryStoreTests.swift",
   "docs/pricing.md",
 ];
 
@@ -44,6 +46,10 @@ assert.match(app, /StoreKitBillingClient/);
 const billing = readFileSync(join(root, "apps/ios/PiperApp/Billing/BillingModels.swift"), "utf8");
 assert.match(billing, /app\.piper\.ios\.lifetime/);
 assert.match(billing, /unlocksOfficialApp/);
+
+const history = readFileSync(join(root, "apps/ios/PiperApp/Persistence/SessionHistoryStore.swift"), "utf8");
+assert.match(history, /FileSessionHistoryStore/);
+assert.match(history, /session-history\.json/);
 
 const keychain = readFileSync(join(root, "apps/ios/PiperApp/Identity/KeychainPeerIdentityStore.swift"), "utf8");
 assert.match(keychain, /kSecClassGenericPassword/);

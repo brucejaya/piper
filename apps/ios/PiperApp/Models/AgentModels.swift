@@ -14,7 +14,7 @@ struct AgentConnection: Identifiable, Equatable {
     }
 }
 
-struct SessionEvent: Identifiable, Equatable {
+struct SessionEvent: Identifiable, Codable, Equatable {
     let id: String
     let agentId: String
     let date: Date

@@ -4,7 +4,8 @@ import SwiftUI
 struct PiperApp: App {
     @StateObject private var store = AgentStore(
         bridge: MockPiperBridge(),
-        identityStore: KeychainPeerIdentityStore()
+        identityStore: KeychainPeerIdentityStore(),
+        historyStore: (try? FileSessionHistoryStore.defaultStore()) ?? MemorySessionHistoryStore()
     )
     @StateObject private var billingStore = BillingStore(client: StoreKitBillingClient())
 

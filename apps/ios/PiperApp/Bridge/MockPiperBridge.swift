@@ -12,6 +12,10 @@ final class MockPiperBridge: PiperBridge {
         self.continuation = captured
     }
 
+    func emit(_ event: PiperBridgeEvent) {
+        continuation.yield(event)
+    }
+
     func connectAgent(instanceKey: String) async throws {
         continuation.yield(.connectionState(instanceKey: instanceKey, state: .connecting))
         let presence = InstancePresence(
