@@ -5,6 +5,7 @@ final class MockPiperBridge: PiperBridge {
     let events: AsyncStream<PiperBridgeEvent>
     private(set) var approvalResponses: [(id: String, decision: ApprovalDecision, reason: String?)] = []
     private(set) var authResults: [(id: String, status: AuthResultStatus, note: String?)] = []
+    private(set) var disconnectedInstanceKeys: [String] = []
 
     init() {
         var captured: AsyncStream<PiperBridgeEvent>.Continuation!
@@ -34,6 +35,7 @@ final class MockPiperBridge: PiperBridge {
     }
 
     func disconnectAgent(instanceKey: String) async {
+        disconnectedInstanceKeys.append(instanceKey)
         continuation.yield(.connectionState(instanceKey: instanceKey, state: .disconnected))
     }
 

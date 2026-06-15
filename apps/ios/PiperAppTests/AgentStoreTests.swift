@@ -47,6 +47,51 @@ final class AgentStoreTests: XCTestCase {
         XCTAssertEqual(store.agents.first?.state, .disconnected)
     }
 
+    func testRemoveAgentDeletesLocalRegistryRowAndDisconnects() async throws {
+        let bridge = MockPiperBridge()
+        let registryStore = MemoryAgentRegistryStore()
+        let store = AgentStore(
+            bridge: bridge,
+            identityStore: MemoryPeerIdentityStore(),
+            registryStore: registryStore
+        )
+        let firstKey = String(repeating: "d", count: 64)
+        let secondKey = String(repeating: "e", count: 64)
+
+        store.addAgent(instanceKey: firstKey)
+        store.addAgent(instanceKey: secondKey)
+
+        guard let firstAgent = store.agents.first(where: { $0.instanceKey == firstKey }) else {
+            XCTFail("agent should exist")
+            return
+        }
+
+        store.removeAgent(firstAgent)
+        try await Task.sleep(nanoseconds: 50_000_000)
+
+        XCTAssertEqual(store.agents.map(\.instanceKey), [secondKey])
+        XCTAssertEqual(try registryStore.loadAgents().map(\.instanceKey), [secondKey])
+        XCTAssertEqual(bridge.disconnectedInstanceKeys, [firstKey])
+    }
+
+    func testLocallyRemovedAgentIsNotRecreatedByDisconnectEvent() async throws {
+        let bridge = MockPiperBridge()
+        let store = AgentStore(bridge: bridge, identityStore: MemoryPeerIdentityStore())
+        let key = String(repeating: "f", count: 64)
+
+        store.addAgent(instanceKey: key)
+        guard let agent = store.agents.first else {
+            XCTFail("agent should exist")
+            return
+        }
+
+        store.removeAgent(agent)
+        bridge.emit(.connectionState(instanceKey: key, state: .disconnected))
+        try await Task.sleep(nanoseconds: 50_000_000)
+
+        XCTAssertTrue(store.agents.isEmpty)
+    }
+
     func testStoreLoadsCachedSessionEvents() {
         let cached = SessionEvent(
             id: "cached",

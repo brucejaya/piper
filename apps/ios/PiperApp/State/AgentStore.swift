@@ -17,6 +17,7 @@ final class AgentStore: ObservableObject {
     private let historyStore: SessionHistoryStore
     private let registryStore: AgentRegistryStore
     private var eventTask: Task<Void, Never>?
+    private var locallyRemovedInstanceKeys = Set<String>()
 
     init(
         bridge: PiperBridge,
@@ -42,6 +43,7 @@ final class AgentStore: ObservableObject {
         guard agents.contains(where: { $0.instanceKey == instanceKey }) == false else {
             return
         }
+        locallyRemovedInstanceKeys.remove(instanceKey)
         agents.append(AgentConnection(
             id: instanceKey,
             instanceKey: instanceKey,
@@ -52,6 +54,18 @@ final class AgentStore: ObservableObject {
             lastActivity: nil
         ))
         persistAgents()
+    }
+
+    func removeAgent(_ agent: AgentConnection) {
+        locallyRemovedInstanceKeys.insert(agent.instanceKey)
+        agents.removeAll { $0.instanceKey == agent.instanceKey }
+        pendingApprovals.removeAll { $0.agentId == agent.id }
+        pendingAuthRequests.removeAll { $0.agentId == agent.id }
+        persistAgents()
+
+        Task {
+            await bridge.disconnectAgent(instanceKey: agent.instanceKey)
+        }
     }
 
     func connect(_ agent: AgentConnection) {
@@ -262,6 +276,9 @@ final class AgentStore: ObservableObject {
         if let index = agents.firstIndex(where: { $0.instanceKey == instanceKey }) {
             update(&agents[index])
         } else {
+            guard locallyRemovedInstanceKeys.contains(instanceKey) == false else {
+                return
+            }
             var agent = AgentConnection(
                 id: instanceKey,
                 instanceKey: instanceKey,

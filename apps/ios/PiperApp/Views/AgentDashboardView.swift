@@ -28,6 +28,7 @@ struct AgentDashboardView: View {
                             AgentRow(agent: agent)
                         }
                     }
+                    .onDelete(perform: removeAgents)
                 }
             }
             .navigationTitle("Piper")
@@ -40,6 +41,12 @@ struct AgentDashboardView: View {
                 .accessibilityLabel("Settings")
             }
         }
+    }
+
+    private func removeAgents(at offsets: IndexSet) {
+        offsets
+            .map { store.agents[$0] }
+            .forEach(store.removeAgent)
     }
 }
 

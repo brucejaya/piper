@@ -59,7 +59,7 @@ The scaffold includes:
 - Settings purchase surface with restore support and lifetime-first offer ordering.
 - Notification permission state for future APNs wake registration.
 - Local session history persistence for recent activity while the app is offline.
-- Local agent registry persistence so paired agent rows survive app restarts.
+- Local agent registry persistence and removal so paired agent rows can be managed on-device.
 - Native presentation mapping for built-in typed surfaces with safe fallback rendering.
 - First-class auth handoff cards with metadata-only complete, cancel, and reject actions.
 

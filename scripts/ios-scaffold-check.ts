@@ -122,6 +122,13 @@ assert.match(agentModels, /struct PendingApproval/);
 assert.match(agentModels, /enum ApprovalStatus/);
 assert.match(agentModels, /struct PendingAuthRequest/);
 
+const agentStore = readFileSync(join(root, "apps/ios/PiperApp/State/AgentStore.swift"), "utf8");
+assert.match(agentStore, /func removeAgent/);
+assert.match(agentStore, /locallyRemovedInstanceKeys/);
+
+const agentDashboard = readFileSync(join(root, "apps/ios/PiperApp/Views/AgentDashboardView.swift"), "utf8");
+assert.match(agentDashboard, /onDelete/);
+
 const sessionView = readFileSync(join(root, "apps/ios/PiperApp/Views/SessionView.swift"), "utf8");
 assert.match(sessionView, /ApprovalCard/);
 assert.match(sessionView, /AuthRequestCard/);
