@@ -1,0 +1,9 @@
+node_modules/
+dist/
+*.log
+
+# Pi project config + Piper instance identity/allowlist (never commit keys)
+.pi/
+
+# test-peer local identity
+.piper-peer/

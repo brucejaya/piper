@@ -1,0 +1,27 @@
+{
+  "name": "piper",
+  "version": "0.0.1",
+  "description": "sshd for Pi — a remote control surface for Pi coding agent instances over HyperDHT. Per-instance keypair identity, manual-pairing allowlist, Pi RPC tunneled over an encrypted P2P socket.",
+  "type": "module",
+  "pi": {
+    "extensions": [
+      "./src/index.ts"
+    ]
+  },
+  "scripts": {
+    "peer": "tsx test-peer/cli.ts",
+    "selftest": "tsx scripts/selftest.ts",
+    "livetest": "tsx scripts/livetest.ts",
+    "tooltest": "tsx scripts/tooltest.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "hyperdht": "^6.32.0"
+  },
+  "devDependencies": {
+    "@mariozechner/pi-coding-agent": "^0.73.1",
+    "@types/node": "^25.9.3",
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3"
+  }
+}
