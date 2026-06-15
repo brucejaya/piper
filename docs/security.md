@@ -200,6 +200,7 @@ Mitigation: Document non-goals, keep command traffic P2P, and design hosted payl
 ## Release Checklist
 
 - `docs/protocol.md` matches `src/protocol.ts`.
+- `docs/compatibility.md` matches the current protocol version and version-bump rules.
 - Pairing and revocation docs exist.
 - Unknown peers are rejected in `scripts/selftest.ts`.
 - Malformed frames do not crash the decoder.

@@ -8,6 +8,8 @@ This document describes the current v0 protocol implemented by `src/protocol.ts`
 
 Typed agent surfaces are documented separately in `docs/surfaces.md`. They are sent over this same wire protocol as `surface` messages.
 
+Compatibility policy and version-bump rules are documented in `docs/compatibility.md`.
+
 ## Transport
 
 - HyperDHT provides discovery, NAT traversal, and encrypted Noise streams.
@@ -53,6 +55,8 @@ Revocation removes a peer key and disconnects matching active sockets:
 
 Current protocol version: `1`.
 
+Supported protocol range: `1` through `1`.
+
 The instance sends the protocol version in the initial `hello` message:
 
 ```json
@@ -67,6 +71,7 @@ Compatibility policy:
 - Removing fields, renaming fields, or changing message meaning requires a protocol version bump.
 - Clients should treat unknown inbound fields as optional.
 - Instances should respond with a structured error when they reject a known request.
+- Clients should disconnect from unsupported `hello.protocol` versions.
 
 ## Instance Presence
 

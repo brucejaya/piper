@@ -15,6 +15,8 @@ import DHT from "hyperdht";
 import createTestnet from "hyperdht/testnet";
 import { Allowlist } from "../src/allowlist.js";
 import {
+  PROTOCOL_VERSION,
+  checkProtocolCompatibility,
   createAuthRequestSurface,
   createAuthResultSurface,
   createLineDecoder,
@@ -79,6 +81,10 @@ function checkProtocolDecoder() {
   assert.equal(decoded.length, 1);
   assert.equal(decoded[0].t, "get_state");
   assert.deepEqual(invalid, ["malformed_json", "frame_too_large"]);
+  assert.deepEqual(checkProtocolCompatibility(PROTOCOL_VERSION), { supported: true });
+  assert.equal(checkProtocolCompatibility(PROTOCOL_VERSION + 1).supported, false);
+  assert.equal(checkProtocolCompatibility(0).supported, false);
+  assert.equal(checkProtocolCompatibility("1").supported, false);
 
   const surface = createSurface({
     surface: "event",
@@ -111,6 +117,7 @@ function checkProtocolDecoder() {
     status: "completed",
   })), true);
   console.log("[ok] protocol decoder handled partial, CRLF, malformed, and oversized frames");
+  console.log("[ok] protocol compatibility rejected unsupported versions");
   console.log("[ok] surface envelope helpers validate required fallback fields");
 }
 
@@ -177,6 +184,10 @@ async function main() {
   const authResult = received.find((r) => r.msg.t === "auth_result")!.msg as any;
   assert.equal(authResult.status, "completed");
   console.log("[ok] instance received a non-secret auth result message");
+
+  good.socket.write(encode({ t: "future_message", id: "future-1" } as any));
+  await waitFor(() => received.some((r) => (r.msg as any).t === "future_message"), 8000, "inbound unknown message");
+  console.log("[ok] transport delivered an unknown inbound message for handler-level rejection tests");
 
   // --- 2. instance -> peer broadcast ---
   transport.broadcast({ t: "event", event: { type: "agent_start" } });

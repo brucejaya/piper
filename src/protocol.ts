@@ -8,6 +8,7 @@
  */
 
 export const PROTOCOL_VERSION = 1;
+export const MIN_SUPPORTED_PROTOCOL_VERSION = 1;
 export const MAX_FRAME_BYTES = 1024 * 1024;
 
 export type JsonPrimitive = string | number | boolean | null;
@@ -99,9 +100,27 @@ export type OutboundMessage =
 
 export type WireMessage = InboundMessage | OutboundMessage;
 
+export interface ProtocolCompatibility {
+  supported: boolean;
+  reason?: string;
+}
+
 /** Encode a message as one framed line. */
 export function encode(msg: WireMessage): Buffer {
   return Buffer.from(JSON.stringify(msg) + "\n");
+}
+
+export function checkProtocolCompatibility(version: unknown): ProtocolCompatibility {
+  if (typeof version !== "number" || !Number.isInteger(version)) {
+    return { supported: false, reason: "missing or invalid protocol version" };
+  }
+  if (version < MIN_SUPPORTED_PROTOCOL_VERSION) {
+    return { supported: false, reason: `protocol ${version} is older than supported minimum ${MIN_SUPPORTED_PROTOCOL_VERSION}` };
+  }
+  if (version > PROTOCOL_VERSION) {
+    return { supported: false, reason: `protocol ${version} is newer than supported maximum ${PROTOCOL_VERSION}` };
+  }
+  return { supported: true };
 }
 
 export function toJsonRecord(value: unknown): JsonRecord {

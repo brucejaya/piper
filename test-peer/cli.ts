@@ -13,6 +13,7 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import DHT from "hyperdht";
 import {
+  checkProtocolCompatibility,
   createLineDecoder,
   encode,
   shortKey,
@@ -150,6 +151,14 @@ function printSurface(surface: SurfaceEnvelope): void {
 function printEvent(msg: OutboundMessage, socket: any): void {
   switch (msg.t) {
     case "hello":
+      {
+        const compatibility = checkProtocolCompatibility(msg.protocol);
+        if (!compatibility.supported) {
+          console.error(`[protocol] incompatible peer: ${compatibility.reason}`);
+          socket.destroy();
+          break;
+        }
+      }
       console.log(`[instance] ${msg.instance.label} - model ${msg.instance.model ?? "?"} - cwd ${msg.instance.cwd}`);
       break;
     case "presence":
