@@ -150,3 +150,7 @@ Recent community research suggests the strongest wedge is trust. Self-hosters ar
 - How much tool input can be shown safely in approval notifications before leaking sensitive context?
 - What retention period should local history use by default?
 - Should the free app tier allow one paired agent for trial, or should trialing rely on subscription mechanics?
+
+## Networking Spike
+
+The initial networking direction and gate for app UI work are documented in `docs/ios-networking-spike.md`.
