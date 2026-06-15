@@ -29,6 +29,18 @@ struct SessionView: View {
                     }
                 }
 
+                Section("Authentication") {
+                    let requests = store.pendingAuthRequests.filter { $0.agentId == agent.id || $0.agentId == "unknown" }
+                    if requests.isEmpty {
+                        Text("No pending auth requests")
+                            .foregroundStyle(.secondary)
+                    } else {
+                        ForEach(requests) { request in
+                            AuthRequestCard(request: request)
+                        }
+                    }
+                }
+
                 Section("Recent Activity") {
                     ForEach(store.events.filter { $0.agentId == agent.id || $0.agentId == "approval" }) { event in
                         SessionEventRow(event: event)
@@ -57,6 +69,59 @@ struct SessionView: View {
                 }
             }
         }
+    }
+}
+
+private struct AuthRequestCard: View {
+    @EnvironmentObject private var store: AgentStore
+    let request: PendingAuthRequest
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(request.domain)
+                    .font(.headline)
+                Spacer()
+                Text(request.status.rawValue)
+                    .font(.caption)
+                    .foregroundStyle(request.isActionable ? .orange : .secondary)
+            }
+
+            Text(request.origin)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+
+            Text(request.reason)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(4)
+
+            if let requestedScope = request.requestedScope, requestedScope.isEmpty == false {
+                LabeledContent("Scope", value: requestedScope)
+                    .font(.caption)
+            }
+
+            if request.isActionable {
+                HStack {
+                    Button("Reject") {
+                        store.rejectAuth(request)
+                    }
+                    .buttonStyle(.bordered)
+
+                    Button("Cancel") {
+                        store.cancelAuth(request)
+                    }
+                    .buttonStyle(.bordered)
+
+                    Button("Complete") {
+                        store.completeAuth(request)
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+            }
+        }
+        .padding(.vertical, 4)
     }
 }
 

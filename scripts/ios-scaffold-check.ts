@@ -120,9 +120,11 @@ assert.match(transportBridge, /PiperWireCodec/);
 const agentModels = readFileSync(join(root, "apps/ios/PiperApp/Models/AgentModels.swift"), "utf8");
 assert.match(agentModels, /struct PendingApproval/);
 assert.match(agentModels, /enum ApprovalStatus/);
+assert.match(agentModels, /struct PendingAuthRequest/);
 
 const sessionView = readFileSync(join(root, "apps/ios/PiperApp/Views/SessionView.swift"), "utf8");
 assert.match(sessionView, /ApprovalCard/);
+assert.match(sessionView, /AuthRequestCard/);
 assert.match(sessionView, /SurfaceRow/);
 
 const surfacePresentation = readFileSync(join(root, "apps/ios/PiperApp/Surfaces/SurfacePresentation.swift"), "utf8");

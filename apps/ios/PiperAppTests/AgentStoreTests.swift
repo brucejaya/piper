@@ -115,4 +115,69 @@ final class AgentStoreTests: XCTestCase {
         XCTAssertEqual(bridge.approvalResponses.first?.decision, .block)
         XCTAssertEqual(store.events.first?.title, "Approval blocked")
     }
+
+    func testAuthRequestSurfacesBecomeFirstClassHandoffs() async throws {
+        let bridge = MockPiperBridge()
+        let store = AgentStore(bridge: bridge, identityStore: MemoryPeerIdentityStore())
+
+        bridge.emit(.surface(authRequestSurface(id: "auth-1")))
+        try await Task.sleep(nanoseconds: 50_000_000)
+
+        XCTAssertEqual(store.pendingAuthRequests.count, 1)
+        XCTAssertEqual(store.pendingAuthRequests.first?.domain, "example.com")
+        XCTAssertEqual(store.pendingAuthRequests.first?.requestedScope, "profile")
+        XCTAssertEqual(store.pendingAuthRequests.first?.status, .pending)
+    }
+
+    func testAuthCompletionSendsMetadataOnlyResultAndRecordsOutcome() async throws {
+        let bridge = MockPiperBridge()
+        let store = AgentStore(bridge: bridge, identityStore: MemoryPeerIdentityStore())
+
+        bridge.emit(.surface(authRequestSurface(id: "auth-1")))
+        try await Task.sleep(nanoseconds: 50_000_000)
+
+        guard let request = store.pendingAuthRequests.first else {
+            XCTFail("auth request should exist")
+            return
+        }
+
+        store.completeAuth(request, note: "signed in on phone")
+        try await Task.sleep(nanoseconds: 50_000_000)
+
+        XCTAssertEqual(store.pendingAuthRequests.first?.status, .completed)
+        XCTAssertEqual(bridge.authResults.first?.id, "auth-1")
+        XCTAssertEqual(bridge.authResults.first?.status, .completed)
+        XCTAssertEqual(bridge.authResults.first?.note, "signed in on phone")
+        XCTAssertEqual(store.events.first?.title, "Authentication completed")
+    }
+
+    private func authRequestSurface(id: String) -> SurfaceEnvelope {
+        SurfaceEnvelope(
+            kind: "surface",
+            surface: "auth",
+            type: "auth.request",
+            id: id,
+            ts: 1792080000000,
+            source: ["harness": "pi"],
+            schema: SurfaceSchema(version: 1, url: nil),
+            summary: "Authentication requested for example.com",
+            fallback: "Agent needs login",
+            display: SurfaceDisplay(
+                title: "Authentication requested",
+                subtitle: "example.com",
+                priority: "critical",
+                icon: "key-round",
+                group: "auth"
+            ),
+            payload: [
+                "mode": .string("open_url"),
+                "origin": .string("https://example.com/login"),
+                "domain": .string("example.com"),
+                "reason": .string("Agent needs login"),
+                "expiresAt": .number(Date().addingTimeInterval(300).timeIntervalSince1970 * 1000),
+                "requestedScope": .string("profile"),
+                "sessionDestination": .string("agent-browser")
+            ]
+        )
+    }
 }

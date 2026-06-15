@@ -5,10 +5,12 @@ final class AgentStore: ObservableObject {
     @Published private(set) var agents: [AgentConnection] = []
     @Published private(set) var events: [SessionEvent] = []
     @Published private(set) var pendingApprovals: [PendingApproval] = []
+    @Published private(set) var pendingAuthRequests: [PendingAuthRequest] = []
     @Published private(set) var peerSeedAvailable = false
 
     private static let historyLimit = 500
     private static let approvalTTL: TimeInterval = 300
+    private static let authTTL: TimeInterval = 300
 
     private let bridge: PiperBridge
     private let identityStore: PeerIdentityStore
@@ -78,6 +80,18 @@ final class AgentStore: ObservableObject {
         resolveApproval(approval, decision: .block, reason: reason)
     }
 
+    func completeAuth(_ request: PendingAuthRequest, note: String? = nil) {
+        resolveAuth(request, status: .completed, note: note)
+    }
+
+    func cancelAuth(_ request: PendingAuthRequest, note: String? = nil) {
+        resolveAuth(request, status: .cancelled, note: note)
+    }
+
+    func rejectAuth(_ request: PendingAuthRequest, note: String? = nil) {
+        resolveAuth(request, status: .rejected, note: note)
+    }
+
     private func startEventLoop() {
         eventTask = Task { [weak self] in
             guard let self else { return }
@@ -112,6 +126,7 @@ final class AgentStore: ObservableObject {
             persistAgents()
         case .surface(let surface):
             let agentId = surface.source["session"] ?? "unknown"
+            handleAuthSurface(surface, agentId: agentId)
             appendEvent(SessionEvent(
                 id: surface.id,
                 agentId: agentId,
@@ -132,6 +147,23 @@ final class AgentStore: ObservableObject {
             ))
         case .response, .error:
             break
+        }
+    }
+
+    private func handleAuthSurface(_ surface: SurfaceEnvelope, agentId: String) {
+        switch surface.type {
+        case "auth.request":
+            upsertAuthRequest(surface, agentId: agentId)
+        case "auth.result":
+            guard let requestId = string("requestId", in: surface.payload),
+                  let rawStatus = string("status", in: surface.payload),
+                  let status = AuthHandoffStatus(rawValue: rawStatus),
+                  let index = pendingAuthRequests.firstIndex(where: { $0.id == requestId }) else {
+                return
+            }
+            pendingAuthRequests[index].status = status
+        default:
+            return
         }
     }
 
@@ -169,6 +201,51 @@ final class AgentStore: ObservableObject {
 
         Task {
             try? await bridge.sendApproval(id: approval.id, decision: decision, reason: reason)
+        }
+    }
+
+    private func upsertAuthRequest(_ surface: SurfaceEnvelope, agentId: String) {
+        let now = Date()
+        let expiresAt = number("expiresAt", in: surface.payload).map {
+            Date(timeIntervalSince1970: $0 / 1000)
+        } ?? now.addingTimeInterval(Self.authTTL)
+
+        let request = PendingAuthRequest(
+            id: surface.id,
+            agentId: agentId,
+            mode: string("mode", in: surface.payload) ?? "open_url",
+            origin: string("origin", in: surface.payload) ?? "",
+            domain: string("domain", in: surface.payload) ?? surface.display?.subtitle ?? "Unknown domain",
+            reason: string("reason", in: surface.payload) ?? surface.fallback,
+            requestedScope: string("requestedScope", in: surface.payload),
+            sessionDestination: string("sessionDestination", in: surface.payload),
+            receivedAt: now,
+            expiresAt: expiresAt,
+            status: expiresAt > now ? .pending : .expired
+        )
+
+        pendingAuthRequests.removeAll { $0.id == surface.id }
+        pendingAuthRequests.insert(request, at: 0)
+    }
+
+    private func resolveAuth(_ request: PendingAuthRequest, status: AuthResultStatus, note: String?) {
+        guard let index = pendingAuthRequests.firstIndex(where: { $0.id == request.id }),
+              pendingAuthRequests[index].isActionable else {
+            return
+        }
+
+        pendingAuthRequests[index].status = AuthHandoffStatus(rawValue: status.rawValue) ?? .failed
+        appendEvent(SessionEvent(
+            id: "\(request.id)-\(status.rawValue)",
+            agentId: request.agentId,
+            date: Date(),
+            title: "Authentication \(status.rawValue)",
+            detail: note ?? request.domain,
+            surface: nil
+        ))
+
+        Task {
+            try? await bridge.sendAuthResult(id: request.id, status: status, note: note)
         }
     }
 
@@ -230,5 +307,30 @@ final class AgentStore: ObservableObject {
 
     static func shortKey(_ key: String) -> String {
         key.count > 13 ? "\(key.prefix(12))..." : key
+    }
+
+    private func string(_ key: String, in payload: [String: JSONValue]) -> String? {
+        guard let value = payload[key] else {
+            return nil
+        }
+
+        switch value {
+        case .string(let value):
+            return value.isEmpty ? nil : value
+        case .number(let value):
+            return value.truncatingRemainder(dividingBy: 1) == 0 ? String(Int(value)) : String(value)
+        case .bool(let value):
+            return value ? "true" : "false"
+        default:
+            return nil
+        }
+    }
+
+    private func number(_ key: String, in payload: [String: JSONValue]) -> Double? {
+        guard let rawValue = payload[key],
+              case .number(let value) = rawValue else {
+            return nil
+        }
+        return value
     }
 }

@@ -4,6 +4,7 @@ final class MockPiperBridge: PiperBridge {
     private let continuation: AsyncStream<PiperBridgeEvent>.Continuation
     let events: AsyncStream<PiperBridgeEvent>
     private(set) var approvalResponses: [(id: String, decision: ApprovalDecision, reason: String?)] = []
+    private(set) var authResults: [(id: String, status: AuthResultStatus, note: String?)] = []
 
     init() {
         var captured: AsyncStream<PiperBridgeEvent>.Continuation!
@@ -62,6 +63,7 @@ final class MockPiperBridge: PiperBridge {
     }
 
     func sendAuthResult(id: String, status: AuthResultStatus, note: String?) async throws {
+        authResults.append((id: id, status: status, note: note))
         continuation.yield(.response(id: id, ok: true, error: nil))
     }
 }
