@@ -53,6 +53,7 @@ The scaffold includes:
 - Bridge abstraction matching `docs/ios-networking-spike.md`.
 - Mock bridge for UI/state development before the Bare/Pear-end bridge lands.
 - Peer identity store protocol with Keychain production storage and an in-memory test implementation.
+- Billing model and StoreKit client boundary for monthly, annual, and lifetime products.
 
 ## Next Mac Tasks
 

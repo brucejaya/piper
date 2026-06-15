@@ -6,11 +6,13 @@ struct PiperApp: App {
         bridge: MockPiperBridge(),
         identityStore: KeychainPeerIdentityStore()
     )
+    @StateObject private var billingStore = BillingStore(client: StoreKitBillingClient())
 
     var body: some Scene {
         WindowGroup {
             AgentDashboardView()
                 .environmentObject(store)
+                .environmentObject(billingStore)
         }
     }
 }

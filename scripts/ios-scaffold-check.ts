@@ -10,6 +10,10 @@ const requiredFiles = [
   ".github/workflows/ios.yml",
   "scripts/ios-mac-build.sh",
   "apps/ios/PiperApp/PiperApp.swift",
+  "apps/ios/PiperApp/Billing/BillingClient.swift",
+  "apps/ios/PiperApp/Billing/BillingModels.swift",
+  "apps/ios/PiperApp/Billing/BillingStore.swift",
+  "apps/ios/PiperApp/Billing/StoreKitBillingClient.swift",
   "apps/ios/PiperApp/Models/PiperProtocol.swift",
   "apps/ios/PiperApp/Bridge/PiperBridge.swift",
   "apps/ios/PiperApp/Bridge/MockPiperBridge.swift",
@@ -19,7 +23,9 @@ const requiredFiles = [
   "apps/ios/PiperApp/Views/AgentDashboardView.swift",
   "apps/ios/PiperApp/Views/SessionView.swift",
   "apps/ios/PiperAppTests/AgentStoreTests.swift",
+  "apps/ios/PiperAppTests/BillingTests.swift",
   "apps/ios/PiperAppTests/PiperProtocolTests.swift",
+  "docs/pricing.md",
 ];
 
 for (const file of requiredFiles) {
@@ -33,6 +39,11 @@ assert.match(project, /deploymentTarget:/);
 
 const app = readFileSync(join(root, "apps/ios/PiperApp/PiperApp.swift"), "utf8");
 assert.match(app, /KeychainPeerIdentityStore/);
+assert.match(app, /StoreKitBillingClient/);
+
+const billing = readFileSync(join(root, "apps/ios/PiperApp/Billing/BillingModels.swift"), "utf8");
+assert.match(billing, /app\.piper\.ios\.lifetime/);
+assert.match(billing, /unlocksOfficialApp/);
 
 const keychain = readFileSync(join(root, "apps/ios/PiperApp/Identity/KeychainPeerIdentityStore.swift"), "utf8");
 assert.match(keychain, /kSecClassGenericPassword/);
