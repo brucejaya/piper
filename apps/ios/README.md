@@ -61,7 +61,7 @@ The scaffold includes:
 - Local session history persistence for recent activity while the app is offline.
 - Local agent registry persistence and removal so paired agent rows can be managed on-device.
 - Native presentation mapping for built-in typed surfaces with safe fallback rendering.
-- First-class auth handoff cards with metadata-only complete, cancel, and reject actions.
+- First-class auth handoff cards with guarded open, complete, cancel, and reject actions.
 
 ## Next Mac Tasks
 

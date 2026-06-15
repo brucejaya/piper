@@ -69,4 +69,28 @@ struct PendingAuthRequest: Identifiable, Codable, Equatable {
     var isActionable: Bool {
         status == .pending && expiresAt > Date()
     }
+
+    var actionURL: URL? {
+        guard let url = URL(string: origin),
+              let scheme = url.scheme?.lowercased(),
+              let host = url.host?.lowercased() else {
+            return nil
+        }
+
+        if scheme == "https" {
+            return url
+        }
+
+        if scheme == "http" && Self.localDevelopmentHosts.contains(host) {
+            return url
+        }
+
+        return nil
+    }
+
+    private static let localDevelopmentHosts: Set<String> = [
+        "localhost",
+        "127.0.0.1",
+        "::1"
+    ]
 }

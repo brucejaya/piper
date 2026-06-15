@@ -121,6 +121,8 @@ const agentModels = readFileSync(join(root, "apps/ios/PiperApp/Models/AgentModel
 assert.match(agentModels, /struct PendingApproval/);
 assert.match(agentModels, /enum ApprovalStatus/);
 assert.match(agentModels, /struct PendingAuthRequest/);
+assert.match(agentModels, /struct PendingAuthRequest[\s\S]*var actionURL/);
+assert.match(agentModels, /struct PendingAuthRequest[\s\S]*localDevelopmentHosts/);
 
 const agentStore = readFileSync(join(root, "apps/ios/PiperApp/State/AgentStore.swift"), "utf8");
 assert.match(agentStore, /func removeAgent/);
@@ -132,6 +134,8 @@ assert.match(agentDashboard, /onDelete/);
 const sessionView = readFileSync(join(root, "apps/ios/PiperApp/Views/SessionView.swift"), "utf8");
 assert.match(sessionView, /ApprovalCard/);
 assert.match(sessionView, /AuthRequestCard/);
+assert.match(sessionView, /openURL/);
+assert.match(sessionView, /Label\("Open", systemImage: "safari"\)/);
 assert.match(sessionView, /SurfaceRow/);
 
 const surfacePresentation = readFileSync(join(root, "apps/ios/PiperApp/Surfaces/SurfacePresentation.swift"), "utf8");

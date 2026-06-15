@@ -74,6 +74,7 @@ struct SessionView: View {
 
 private struct AuthRequestCard: View {
     @EnvironmentObject private var store: AgentStore
+    @Environment(\.openURL) private var openURL
     let request: PendingAuthRequest
 
     var body: some View {
@@ -102,26 +103,78 @@ private struct AuthRequestCard: View {
                     .font(.caption)
             }
 
+            if let sessionDestination = request.sessionDestination, sessionDestination.isEmpty == false {
+                LabeledContent("Destination", value: sessionDestination)
+                    .font(.caption)
+            }
+
+            LabeledContent("Expires", value: request.expiresAt, format: .dateTime.hour().minute())
+                .font(.caption)
+
             if request.isActionable {
-                HStack {
-                    Button("Reject") {
-                        store.rejectAuth(request)
-                    }
-                    .buttonStyle(.bordered)
-
-                    Button("Cancel") {
-                        store.cancelAuth(request)
-                    }
-                    .buttonStyle(.bordered)
-
-                    Button("Complete") {
-                        store.completeAuth(request)
-                    }
-                    .buttonStyle(.borderedProminent)
+                ViewThatFits {
+                    authActions
+                    authActionsStacked
                 }
             }
         }
         .padding(.vertical, 4)
+    }
+
+    private var authActions: some View {
+        HStack {
+            Button("Reject") {
+                store.rejectAuth(request)
+            }
+            .buttonStyle(.bordered)
+
+            Button("Cancel") {
+                store.cancelAuth(request)
+            }
+            .buttonStyle(.bordered)
+
+            if let actionURL = request.actionURL {
+                Button {
+                    openURL(actionURL)
+                } label: {
+                    Label("Open", systemImage: "safari")
+                }
+                .buttonStyle(.borderedProminent)
+            }
+
+            Button("Complete") {
+                store.completeAuth(request)
+            }
+            .buttonStyle(.bordered)
+        }
+    }
+
+    private var authActionsStacked: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Button("Reject") {
+                store.rejectAuth(request)
+            }
+            .buttonStyle(.bordered)
+
+            Button("Cancel") {
+                store.cancelAuth(request)
+            }
+            .buttonStyle(.bordered)
+
+            if let actionURL = request.actionURL {
+                Button {
+                    openURL(actionURL)
+                } label: {
+                    Label("Open", systemImage: "safari")
+                }
+                .buttonStyle(.borderedProminent)
+            }
+
+            Button("Complete") {
+                store.completeAuth(request)
+            }
+            .buttonStyle(.bordered)
+        }
     }
 }
 

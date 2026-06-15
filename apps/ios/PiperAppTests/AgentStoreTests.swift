@@ -196,6 +196,36 @@ final class AgentStoreTests: XCTestCase {
         XCTAssertEqual(store.events.first?.title, "Authentication completed")
     }
 
+    func testAuthRequestExposesOnlySafeActionURLs() {
+        var request = authRequest(origin: "https://example.com/login")
+        XCTAssertEqual(request.actionURL?.absoluteString, "https://example.com/login")
+
+        request = authRequest(origin: "http://localhost:3000/login")
+        XCTAssertEqual(request.actionURL?.absoluteString, "http://localhost:3000/login")
+
+        request = authRequest(origin: "http://example.com/login")
+        XCTAssertNil(request.actionURL)
+
+        request = authRequest(origin: "javascript:alert(1)")
+        XCTAssertNil(request.actionURL)
+    }
+
+    private func authRequest(origin: String) -> PendingAuthRequest {
+        PendingAuthRequest(
+            id: "auth-request",
+            agentId: "agent",
+            mode: "open_url",
+            origin: origin,
+            domain: "example.com",
+            reason: "Agent needs login",
+            requestedScope: "profile",
+            sessionDestination: "agent-browser",
+            receivedAt: Date(),
+            expiresAt: Date().addingTimeInterval(300),
+            status: .pending
+        )
+    }
+
     private func authRequestSurface(id: String) -> SurfaceEnvelope {
         SurfaceEnvelope(
             kind: "surface",

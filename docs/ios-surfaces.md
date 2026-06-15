@@ -24,7 +24,7 @@ The iOS app renders Piper typed surfaces as native controls. The protocol suppli
 - `metric.series`: metric tile or compact chart with label, value, unit, and trend.
 - `experiment.log`: experiment card with hypothesis, result, metric summary, and linked artifacts.
 - `surface.proposal`: trust decision sheet showing proposed type, sample payload, requested treatment, and risk.
-- `auth.request`: high-trust auth handoff sheet showing requester, domain, origin URL, scope, destination, expiry, complete, cancel, and reject.
+- `auth.request`: high-trust auth handoff sheet showing requester, domain, guarded origin URL open action, scope, destination, expiry, complete, cancel, and reject.
 - `auth.result`: audit timeline row showing non-secret completion status.
 
 ## Unknown Surface Fallback
@@ -42,6 +42,6 @@ Unknown surfaces must not create buttons, notifications, or privileged UI unless
 
 ## Auth Handoff
 
-The first auth handoff should keep credentials on the user's device. The app may open a system browser or native auth session for the target domain, then report non-secret completion metadata. It must not relay passwords, passkeys, one-time codes, cookies, refresh tokens, or bearer tokens to the agent.
+The first auth handoff should keep credentials on the user's device. The app may open a system browser or native auth session for an HTTPS target domain, with localhost HTTP allowed only for development, then report non-secret completion metadata. It must not relay passwords, passkeys, one-time codes, cookies, refresh tokens, or bearer tokens to the agent.
 
 Any future browser-session transfer needs a separate security review before implementation.
