@@ -72,4 +72,24 @@ final class TransportPiperBridgeTests: XCTestCase {
             ]))
         ))
     }
+
+    func testSurfaceFramesIncludeActiveInstanceKey() async throws {
+        let session = MemoryPiperTransportSession()
+        let bridge = TransportPiperBridge(session: session)
+        var iterator = bridge.events.makeAsyncIterator()
+
+        try await bridge.connectAgent(instanceKey: "agent-key")
+        _ = await iterator.next()
+        session.emit("""
+        {"t":"surface","surface":{"kind":"surface","surface":"event","type":"task.update","id":"surface-1","ts":1792080000000,"source":{"harness":"pi","session":".pi/session.jsonl"},"schema":{"version":1},"summary":"Task update","fallback":"Agent started work","display":{"title":"Task update","subtitle":"running","priority":"normal","icon":"play","group":"task"},"payload":{"state":"running"}}}\n
+        """)
+
+        guard case .surface(let instanceKey, let surface) = await iterator.next() else {
+            XCTFail("expected surface event")
+            return
+        }
+
+        XCTAssertEqual(instanceKey, "agent-key")
+        XCTAssertEqual(surface.id, "surface-1")
+    }
 }

@@ -147,8 +147,14 @@ final class AgentStore: ObservableObject {
                 agent.lastActivity = Date()
             }
             persistAgents()
-        case .surface(let surface):
-            let agentId = surface.source["session"] ?? "unknown"
+        case .surface(let instanceKey, let surface):
+            let agentId = instanceKey ?? surface.source["agent"] ?? surface.source["session"] ?? "unknown"
+            if let instanceKey {
+                updateAgent(instanceKey: instanceKey) { agent in
+                    agent.lastActivity = Date(timeIntervalSince1970: TimeInterval(surface.ts) / 1000)
+                }
+                persistAgents()
+            }
             handleAuthSurface(surface, agentId: agentId)
             appendEvent(SessionEvent(
                 id: surface.id,

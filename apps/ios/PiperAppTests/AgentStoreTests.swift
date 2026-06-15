@@ -235,7 +235,7 @@ final class AgentStoreTests: XCTestCase {
         let bridge = MockPiperBridge()
         let store = AgentStore(bridge: bridge, identityStore: MemoryPeerIdentityStore())
 
-        bridge.emit(.surface(authRequestSurface(id: "auth-1")))
+        bridge.emit(.surface(instanceKey: nil, surface: authRequestSurface(id: "auth-1")))
         try await Task.sleep(nanoseconds: 50_000_000)
 
         XCTAssertEqual(store.pendingAuthRequests.count, 1)
@@ -248,7 +248,7 @@ final class AgentStoreTests: XCTestCase {
         let bridge = MockPiperBridge()
         let store = AgentStore(bridge: bridge, identityStore: MemoryPeerIdentityStore())
 
-        bridge.emit(.surface(authRequestSurface(id: "auth-1")))
+        bridge.emit(.surface(instanceKey: nil, surface: authRequestSurface(id: "auth-1")))
         try await Task.sleep(nanoseconds: 50_000_000)
 
         guard let request = store.pendingAuthRequests.first else {
@@ -264,6 +264,20 @@ final class AgentStoreTests: XCTestCase {
         XCTAssertEqual(bridge.authResults.first?.status, .completed)
         XCTAssertEqual(bridge.authResults.first?.note, "signed in on phone")
         XCTAssertEqual(store.events.first?.title, "Authentication completed")
+    }
+
+    func testTypedSurfaceEventsUseInstanceKeyWhenAvailable() async throws {
+        let bridge = MockPiperBridge()
+        let store = AgentStore(bridge: bridge, identityStore: MemoryPeerIdentityStore())
+        let key = String(repeating: "a", count: 64)
+
+        store.addAgent(instanceKey: key)
+        bridge.emit(.surface(instanceKey: key, surface: taskSurface(id: "surface-1")))
+        try await Task.sleep(nanoseconds: 50_000_000)
+
+        XCTAssertEqual(store.events.first?.agentId, key)
+        XCTAssertEqual(store.events.first?.title, "Task update")
+        XCTAssertEqual(store.agents.first?.lastActivity, Date(timeIntervalSince1970: 1_792_080_000))
     }
 
     func testAuthRequestExposesOnlySafeActionURLs() {
@@ -293,6 +307,31 @@ final class AgentStoreTests: XCTestCase {
             receivedAt: Date(),
             expiresAt: Date().addingTimeInterval(300),
             status: .pending
+        )
+    }
+
+    private func taskSurface(id: String) -> SurfaceEnvelope {
+        SurfaceEnvelope(
+            kind: "surface",
+            surface: "event",
+            type: "task.update",
+            id: id,
+            ts: 1792080000000,
+            source: ["harness": "pi", "session": ".pi/session.jsonl"],
+            schema: SurfaceSchema(version: 1, url: nil),
+            summary: "Task update",
+            fallback: "Agent started work",
+            display: SurfaceDisplay(
+                title: "Task update",
+                subtitle: "running",
+                priority: "normal",
+                icon: "play",
+                group: "task"
+            ),
+            payload: [
+                "state": .string("running"),
+                "next": .string("Inspect files")
+            ]
         )
     }
 

@@ -91,7 +91,7 @@ final class TransportPiperBridge: PiperBridge {
         case .presence(let presence):
             continuation.yield(.presence(presence))
         case .surface(let surface):
-            continuation.yield(.surface(surface))
+            continuation.yield(.surface(instanceKey: activeInstanceKey, surface: surface))
         case .response(let id, let ok, let error):
             continuation.yield(.response(id: id, ok: ok, error: error))
         case .approvalRequest(let id, let toolName, let input):

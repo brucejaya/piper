@@ -6,6 +6,8 @@ The iOS app renders Piper typed surfaces as native controls. The protocol suppli
 
 Raw Pi events remain the compatibility floor. When no typed surface exists, the app should show a compact inert activity row derived from safe scalar fields and never create privileged buttons or notifications from raw event payloads alone.
 
+When routing a surface to an agent view, clients should prefer the authenticated transport peer or active instance key over optional `source.session` metadata. Session metadata is useful context, not the agent identity.
+
 ## Rendering Rules
 
 - Never render agent-provided HTML, JavaScript, CSS, Swift, or arbitrary component descriptions.
