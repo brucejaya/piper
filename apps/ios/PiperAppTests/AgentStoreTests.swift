@@ -9,7 +9,12 @@ final class AgentStoreTests: XCTestCase {
     }
 
     func testAddAgentCreatesDisconnectedEntry() {
-        let store = AgentStore(bridge: MockPiperBridge(), identityStore: MemoryPeerIdentityStore())
+        let registryStore = MemoryAgentRegistryStore()
+        let store = AgentStore(
+            bridge: MockPiperBridge(),
+            identityStore: MemoryPeerIdentityStore(),
+            registryStore: registryStore
+        )
         let key = String(repeating: "b", count: 64)
 
         store.addAgent(instanceKey: key)
@@ -18,6 +23,28 @@ final class AgentStoreTests: XCTestCase {
         XCTAssertEqual(store.agents.count, 1)
         XCTAssertEqual(store.agents.first?.state, .disconnected)
         XCTAssertEqual(store.agents.first?.shortKey, "bbbbbbbbbbbb...")
+        XCTAssertEqual((try? registryStore.loadAgents().first?.instanceKey), key)
+    }
+
+    func testStoreLoadsPersistedAgents() {
+        let record = AgentRecord(
+            id: "agent",
+            instanceKey: String(repeating: "c", count: 64),
+            label: "Workstation",
+            shortKey: "cccccccccccc...",
+            addedAt: Date(timeIntervalSince1970: 1),
+            lastConnectedAt: Date(timeIntervalSince1970: 2)
+        )
+
+        let store = AgentStore(
+            bridge: MockPiperBridge(),
+            identityStore: MemoryPeerIdentityStore(),
+            registryStore: MemoryAgentRegistryStore(agents: [record])
+        )
+
+        XCTAssertEqual(store.agents.count, 1)
+        XCTAssertEqual(store.agents.first?.label, "Workstation")
+        XCTAssertEqual(store.agents.first?.state, .disconnected)
     }
 
     func testStoreLoadsCachedSessionEvents() {

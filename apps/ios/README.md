@@ -55,6 +55,7 @@ The scaffold includes:
 - Peer identity store protocol with Keychain production storage and an in-memory test implementation.
 - Billing model and StoreKit client boundary for monthly, annual, and lifetime products.
 - Local session history persistence for recent activity while the app is offline.
+- Local agent registry persistence so paired agent rows survive app restarts.
 
 ## Next Mac Tasks
 

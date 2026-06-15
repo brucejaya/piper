@@ -13,17 +13,21 @@ final class AgentStore: ObservableObject {
     private let bridge: PiperBridge
     private let identityStore: PeerIdentityStore
     private let historyStore: SessionHistoryStore
+    private let registryStore: AgentRegistryStore
     private var eventTask: Task<Void, Never>?
 
     init(
         bridge: PiperBridge,
         identityStore: PeerIdentityStore,
-        historyStore: SessionHistoryStore = MemorySessionHistoryStore()
+        historyStore: SessionHistoryStore = MemorySessionHistoryStore(),
+        registryStore: AgentRegistryStore = MemoryAgentRegistryStore()
     ) {
         self.bridge = bridge
         self.identityStore = identityStore
         self.historyStore = historyStore
+        self.registryStore = registryStore
         self.events = (try? historyStore.loadRecent(limit: Self.historyLimit)) ?? []
+        self.agents = ((try? registryStore.loadAgents()) ?? []).map(Self.agentConnection)
         startEventLoop()
         peerSeedAvailable = (try? identityStore.loadOrCreateSeed()) != nil
     }
@@ -45,6 +49,7 @@ final class AgentStore: ObservableObject {
             presence: nil,
             lastActivity: nil
         ))
+        persistAgents()
     }
 
     func connect(_ agent: AgentConnection) {
@@ -97,12 +102,14 @@ final class AgentStore: ObservableObject {
                 agent.state = state
                 agent.lastActivity = Date()
             }
+            persistAgents()
         case .presence(let presence):
             updateAgent(instanceKey: presence.publicKey) { agent in
                 agent.label = presence.label
                 agent.presence = presence
                 agent.lastActivity = Date()
             }
+            persistAgents()
         case .surface(let surface):
             let agentId = surface.source["session"] ?? "unknown"
             appendEvent(SessionEvent(
@@ -190,6 +197,35 @@ final class AgentStore: ObservableObject {
             update(&agent)
             agents.append(agent)
         }
+    }
+
+    private func persistAgents() {
+        let existingRecords = ((try? registryStore.loadAgents()) ?? []).reduce(into: [String: AgentRecord]()) { records, record in
+            records[record.id] = record
+        }
+        let records = agents.map { agent in
+            AgentRecord(
+                id: agent.id,
+                instanceKey: agent.instanceKey,
+                label: agent.label,
+                shortKey: agent.shortKey,
+                addedAt: existingRecords[agent.id]?.addedAt ?? Date(),
+                lastConnectedAt: agent.lastActivity
+            )
+        }
+        try? registryStore.saveAgents(records)
+    }
+
+    private static func agentConnection(from record: AgentRecord) -> AgentConnection {
+        AgentConnection(
+            id: record.id,
+            instanceKey: record.instanceKey,
+            label: record.label,
+            shortKey: record.shortKey,
+            state: .disconnected,
+            presence: nil,
+            lastActivity: record.lastConnectedAt
+        )
     }
 
     static func shortKey(_ key: String) -> String {
