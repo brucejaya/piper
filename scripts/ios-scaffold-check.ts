@@ -143,6 +143,7 @@ assert.match(agentStore, /rawEvent/);
 
 const agentDashboard = readFileSync(join(root, "apps/ios/PiperApp/Views/AgentDashboardView.swift"), "utf8");
 assert.match(agentDashboard, /onDelete/);
+assert.match(agentDashboard, /SessionView\(agentID: agent\.id\)/);
 
 const sessionView = readFileSync(join(root, "apps/ios/PiperApp/Views/SessionView.swift"), "utf8");
 assert.match(sessionView, /ApprovalCard/);
@@ -150,6 +151,9 @@ assert.match(sessionView, /AuthRequestCard/);
 assert.match(sessionView, /openURL/);
 assert.match(sessionView, /Label\("Open", systemImage: "safari"\)/);
 assert.match(sessionView, /SurfaceRow/);
+assert.match(sessionView, /let agentID: String/);
+assert.match(sessionView, /store\.agents\.first/);
+assert.match(sessionView, /ContentUnavailableView\("Agent Removed"/);
 
 const surfacePresentation = readFileSync(join(root, "apps/ios/PiperApp/Surfaces/SurfacePresentation.swift"), "utf8");
 assert.match(surfacePresentation, /git\.commit/);

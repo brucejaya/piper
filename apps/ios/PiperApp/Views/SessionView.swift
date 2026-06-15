@@ -2,73 +2,84 @@ import SwiftUI
 
 struct SessionView: View {
     @EnvironmentObject private var store: AgentStore
-    let agent: AgentConnection
+    let agentID: String
     @State private var prompt = ""
 
     var body: some View {
-        VStack(spacing: 0) {
-            List {
-                Section("Status") {
-                    LabeledContent("Connection", value: agent.state.rawValue)
-                    LabeledContent("Key", value: agent.shortKey)
-                    if let presence = agent.presence {
-                        LabeledContent("Working Directory", value: presence.cwd)
-                        LabeledContent("Model", value: presence.model ?? "Unknown")
-                    }
-                }
+        Group {
+            if let agent {
+                VStack(spacing: 0) {
+                    List {
+                        Section("Status") {
+                            LabeledContent("Connection", value: agent.state.rawValue)
+                            LabeledContent("Key", value: agent.shortKey)
+                            if let presence = agent.presence {
+                                LabeledContent("Working Directory", value: presence.cwd)
+                                LabeledContent("Model", value: presence.model ?? "Unknown")
+                            }
+                        }
 
-                Section("Approvals") {
-                    let approvals = store.pendingApprovals.filter { $0.agentId == agent.id || $0.agentId == "approval" }
-                    if approvals.isEmpty {
-                        Text("No pending approvals")
-                            .foregroundStyle(.secondary)
-                    } else {
-                        ForEach(approvals) { approval in
-                            ApprovalCard(approval: approval)
+                        Section("Approvals") {
+                            let approvals = store.pendingApprovals.filter { $0.agentId == agent.id || $0.agentId == "approval" }
+                            if approvals.isEmpty {
+                                Text("No pending approvals")
+                                    .foregroundStyle(.secondary)
+                            } else {
+                                ForEach(approvals) { approval in
+                                    ApprovalCard(approval: approval)
+                                }
+                            }
+                        }
+
+                        Section("Authentication") {
+                            let requests = store.pendingAuthRequests.filter { $0.agentId == agent.id || $0.agentId == "unknown" }
+                            if requests.isEmpty {
+                                Text("No pending auth requests")
+                                    .foregroundStyle(.secondary)
+                            } else {
+                                ForEach(requests) { request in
+                                    AuthRequestCard(request: request)
+                                }
+                            }
+                        }
+
+                        Section("Recent Activity") {
+                            ForEach(store.events.filter { $0.agentId == agent.id || $0.agentId == "approval" }) { event in
+                                SessionEventRow(event: event)
+                            }
+                        }
+                    }
+
+                    HStack {
+                        TextField("Prompt", text: $prompt)
+                            .textFieldStyle(.roundedBorder)
+                        Button("Send") {
+                            store.sendPrompt(prompt, to: agent)
+                            prompt = ""
+                        }
+                        .disabled(prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    }
+                    .padding()
+                }
+                .navigationTitle(agent.label)
+                .toolbar {
+                    Button(agent.state == .connected ? "Disconnect" : "Connect") {
+                        if agent.state == .connected {
+                            store.disconnect(agent)
+                        } else {
+                            store.connect(agent)
                         }
                     }
                 }
-
-                Section("Authentication") {
-                    let requests = store.pendingAuthRequests.filter { $0.agentId == agent.id || $0.agentId == "unknown" }
-                    if requests.isEmpty {
-                        Text("No pending auth requests")
-                            .foregroundStyle(.secondary)
-                    } else {
-                        ForEach(requests) { request in
-                            AuthRequestCard(request: request)
-                        }
-                    }
-                }
-
-                Section("Recent Activity") {
-                    ForEach(store.events.filter { $0.agentId == agent.id || $0.agentId == "approval" }) { event in
-                        SessionEventRow(event: event)
-                    }
-                }
-            }
-
-            HStack {
-                TextField("Prompt", text: $prompt)
-                    .textFieldStyle(.roundedBorder)
-                Button("Send") {
-                    store.sendPrompt(prompt, to: agent)
-                    prompt = ""
-                }
-                .disabled(prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            }
-            .padding()
-        }
-        .navigationTitle(agent.label)
-        .toolbar {
-            Button(agent.state == .connected ? "Disconnect" : "Connect") {
-                if agent.state == .connected {
-                    store.disconnect(agent)
-                } else {
-                    store.connect(agent)
-                }
+            } else {
+                ContentUnavailableView("Agent Removed", systemImage: "desktopcomputer.trianglebadge.exclamationmark")
+                    .navigationTitle("Piper")
             }
         }
+    }
+
+    private var agent: AgentConnection? {
+        store.agents.first { $0.id == agentID }
     }
 }
 

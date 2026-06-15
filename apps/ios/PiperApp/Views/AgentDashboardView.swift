@@ -23,7 +23,7 @@ struct AgentDashboardView: View {
                 Section {
                     ForEach(store.agents) { agent in
                         NavigationLink {
-                            SessionView(agent: agent)
+                            SessionView(agentID: agent.id)
                         } label: {
                             AgentRow(agent: agent)
                         }
