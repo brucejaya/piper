@@ -55,4 +55,19 @@ final class PiperWireCodecTests: XCTestCase {
             input: .object(["command": .string("npm test")])
         ))
     }
+
+    func testDecodesRawEventAsInertJSON() throws {
+        let codec = PiperWireCodec()
+        let line = """
+        {"t":"event","event":{"type":"assistant_message","message":"Working on it","tokens":42}}
+        """
+
+        let message = try codec.decodeServerMessage(from: line)
+
+        XCTAssertEqual(message, .event(.object([
+            "type": .string("assistant_message"),
+            "message": .string("Working on it"),
+            "tokens": .number(42)
+        ])))
+    }
 }

@@ -100,8 +100,8 @@ final class TransportPiperBridge: PiperBridge {
                 toolName: toolName,
                 inputSummary: Self.inputSummary(input)
             ))
-        case .event:
-            break
+        case .event(let event):
+            continuation.yield(.rawEvent(instanceKey: activeInstanceKey, event: RawAgentEvent.make(from: event)))
         case .unknown(let type):
             continuation.yield(.error(instanceKey: activeInstanceKey, message: "Unknown message type: \(type)"))
         }

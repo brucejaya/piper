@@ -158,6 +158,23 @@ final class AgentStore: ObservableObject {
                 detail: surface.fallback,
                 surface: surface
             ))
+        case .rawEvent(let instanceKey, let event):
+            let now = Date()
+            let agentId = instanceKey ?? "event"
+            if let instanceKey {
+                updateAgent(instanceKey: instanceKey) { agent in
+                    agent.lastActivity = now
+                }
+                persistAgents()
+            }
+            appendEvent(SessionEvent(
+                id: "\(agentId)-\(event.type)-\(now.timeIntervalSince1970)",
+                agentId: agentId,
+                date: now,
+                title: event.title,
+                detail: event.detail,
+                surface: nil
+            ))
         case .approvalRequest(let id, let toolName, let inputSummary):
             upsertApproval(id: id, toolName: toolName, inputSummary: inputSummary)
             appendEvent(SessionEvent(

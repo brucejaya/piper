@@ -55,6 +55,7 @@ The scaffold includes:
 - Transport-backed bridge adapter ready for the eventual iOS transport.
 - Mock bridge for UI/state development before the real transport lands.
 - Peer identity store protocol with Keychain production storage and an in-memory test implementation.
+- Raw Pi event fallback rendering for session activity before typed surfaces exist.
 - Billing model and StoreKit client boundary for monthly, annual, and lifetime products.
 - Settings purchase surface with restore support and lifetime-first offer ordering.
 - Notification permission state for future APNs wake registration.

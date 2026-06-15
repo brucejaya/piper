@@ -4,6 +4,8 @@
 
 The iOS app renders Piper typed surfaces as native controls. The protocol supplies meaning, source context, payload, and semantic display hints. The app owns layout, styling, interaction, permissions, and redaction.
 
+Raw Pi events remain the compatibility floor. When no typed surface exists, the app should show a compact inert activity row derived from safe scalar fields and never create privileged buttons or notifications from raw event payloads alone.
+
 ## Rendering Rules
 
 - Never render agent-provided HTML, JavaScript, CSS, Swift, or arbitrary component descriptions.

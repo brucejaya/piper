@@ -19,6 +19,7 @@ enum PiperBridgeEvent: Equatable {
     case hello(protocolVersion: Int, instance: InstancePresence)
     case presence(InstancePresence)
     case surface(SurfaceEnvelope)
+    case rawEvent(instanceKey: String?, event: RawAgentEvent)
     case approvalRequest(id: String, toolName: String, inputSummary: String)
     case response(id: String, ok: Bool, error: String?)
     case error(instanceKey: String?, message: String)

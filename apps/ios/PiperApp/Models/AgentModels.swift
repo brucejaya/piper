@@ -23,6 +23,73 @@ struct SessionEvent: Identifiable, Codable, Equatable {
     let surface: SurfaceEnvelope?
 }
 
+struct RawAgentEvent: Equatable {
+    let type: String
+    let payload: JSONValue
+
+    var title: String {
+        readableType(type)
+    }
+
+    var detail: String {
+        if case .object(let fields) = payload {
+            for key in ["summary", "message", "text", "name", "toolName", "state"] {
+                if let value = fields[key].flatMap(Self.scalarString), value.isEmpty == false {
+                    return value
+                }
+            }
+
+            let visibleKeys = fields.keys
+                .filter { $0 != "type" }
+                .sorted()
+                .prefix(5)
+            if visibleKeys.isEmpty == false {
+                return visibleKeys.joined(separator: ", ")
+            }
+        }
+
+        return "Agent activity"
+    }
+
+    static func make(from value: JSONValue) -> RawAgentEvent {
+        let type: String
+        if case .object(let fields) = value,
+           case .string(let rawType) = fields["type"],
+           rawType.isEmpty == false {
+            type = rawType
+        } else {
+            type = "event"
+        }
+
+        return RawAgentEvent(type: type, payload: value)
+    }
+
+    private static func scalarString(_ value: JSONValue) -> String? {
+        switch value {
+        case .string(let value):
+            return value
+        case .number(let value):
+            return value.truncatingRemainder(dividingBy: 1) == 0 ? String(Int(value)) : String(value)
+        case .bool(let value):
+            return value ? "true" : "false"
+        default:
+            return nil
+        }
+    }
+
+    private func readableType(_ value: String) -> String {
+        value
+            .split(separator: "_")
+            .map { part in
+                guard let first = part.first else {
+                    return ""
+                }
+                return first.uppercased() + part.dropFirst()
+            }
+            .joined(separator: " ")
+    }
+}
+
 enum ApprovalStatus: String, Codable, Equatable {
     case pending
     case allowed

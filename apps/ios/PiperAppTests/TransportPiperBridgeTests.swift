@@ -52,4 +52,24 @@ final class TransportPiperBridgeTests: XCTestCase {
             inputSummary: "command, cwd"
         ))
     }
+
+    func testRawEventFramesEmitAgentActivity() async throws {
+        let session = MemoryPiperTransportSession()
+        let bridge = TransportPiperBridge(session: session)
+        var iterator = bridge.events.makeAsyncIterator()
+
+        try await bridge.connectAgent(instanceKey: "agent-key")
+        _ = await iterator.next()
+        session.emit("""
+        {"t":"event","event":{"type":"assistant_message","message":"Working on it"}}\n
+        """)
+
+        XCTAssertEqual(await iterator.next(), .rawEvent(
+            instanceKey: "agent-key",
+            event: RawAgentEvent.make(from: .object([
+                "type": .string("assistant_message"),
+                "message": .string("Working on it")
+            ]))
+        ))
+    }
 }

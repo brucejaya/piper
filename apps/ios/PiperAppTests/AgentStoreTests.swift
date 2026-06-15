@@ -170,6 +170,33 @@ final class AgentStoreTests: XCTestCase {
         XCTAssertEqual(try historyStore.loadRecent(limit: 10).first?.id, "approval-1")
     }
 
+    func testRawAgentEventsAppendReadableActivity() async throws {
+        let bridge = MockPiperBridge()
+        let historyStore = MemorySessionHistoryStore()
+        let store = AgentStore(
+            bridge: bridge,
+            identityStore: MemoryPeerIdentityStore(),
+            historyStore: historyStore
+        )
+        let key = String(repeating: "a", count: 64)
+
+        store.addAgent(instanceKey: key)
+        bridge.emit(.rawEvent(
+            instanceKey: key,
+            event: RawAgentEvent.make(from: .object([
+                "type": .string("assistant_message"),
+                "message": .string("Working on it"),
+                "tokens": .number(42)
+            ]))
+        ))
+        try await Task.sleep(nanoseconds: 50_000_000)
+
+        XCTAssertEqual(store.events.first?.agentId, key)
+        XCTAssertEqual(store.events.first?.title, "Assistant Message")
+        XCTAssertEqual(store.events.first?.detail, "Working on it")
+        XCTAssertEqual(try historyStore.loadRecent(limit: 10).first?.title, "Assistant Message")
+    }
+
     func testApprovalRequestsAreFirstClassAndDeduplicated() async throws {
         let bridge = MockPiperBridge()
         let store = AgentStore(bridge: bridge, identityStore: MemoryPeerIdentityStore())
