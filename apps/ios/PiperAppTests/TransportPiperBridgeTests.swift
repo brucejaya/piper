@@ -47,6 +47,7 @@ final class TransportPiperBridgeTests: XCTestCase {
         """)
 
         XCTAssertEqual(await iterator.next(), .approvalRequest(
+            instanceKey: "agent-key",
             id: "approval-1",
             toolName: "bash",
             inputSummary: "command, cwd"

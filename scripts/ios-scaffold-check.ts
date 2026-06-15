@@ -122,12 +122,14 @@ assert.match(bridge, /sendApproval/);
 assert.match(bridge, /sendAuthResult/);
 assert.match(bridge, /rawEvent/);
 assert.match(bridge, /surface\(instanceKey: String\?/);
+assert.match(bridge, /approvalRequest\(instanceKey: String\?/);
 
 const transportBridge = readFileSync(join(root, "apps/ios/PiperApp/Bridge/TransportPiperBridge.swift"), "utf8");
 assert.match(transportBridge, /PiperTransportSession/);
 assert.match(transportBridge, /PiperWireCodec/);
 assert.match(transportBridge, /RawAgentEvent/);
 assert.match(transportBridge, /surface\(instanceKey: activeInstanceKey/);
+assert.match(transportBridge, /approvalRequest\(\s*instanceKey: activeInstanceKey/);
 
 const agentModels = readFileSync(join(root, "apps/ios/PiperApp/Models/AgentModels.swift"), "utf8");
 assert.match(agentModels, /struct RawAgentEvent/);
@@ -143,6 +145,7 @@ assert.match(agentStore, /locallyRemovedInstanceKeys/);
 assert.match(agentStore, /func handleWake/);
 assert.match(agentStore, /rawEvent/);
 assert.match(agentStore, /instanceKey \?\? surface\.source\["agent"\]/);
+assert.match(agentStore, /upsertApproval\(id: id, agentId: agentId/);
 
 const agentDashboard = readFileSync(join(root, "apps/ios/PiperApp/Views/AgentDashboardView.swift"), "utf8");
 assert.match(agentDashboard, /onDelete/);

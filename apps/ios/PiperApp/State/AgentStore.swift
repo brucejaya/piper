@@ -181,11 +181,12 @@ final class AgentStore: ObservableObject {
                 detail: event.detail,
                 surface: nil
             ))
-        case .approvalRequest(let id, let toolName, let inputSummary):
-            upsertApproval(id: id, toolName: toolName, inputSummary: inputSummary)
+        case .approvalRequest(let instanceKey, let id, let toolName, let inputSummary):
+            let agentId = instanceKey ?? "approval"
+            upsertApproval(id: id, agentId: agentId, toolName: toolName, inputSummary: inputSummary)
             appendEvent(SessionEvent(
                 id: id,
-                agentId: "approval",
+                agentId: agentId,
                 date: Date(),
                 title: "Approval requested: \(toolName)",
                 detail: inputSummary,
@@ -213,11 +214,11 @@ final class AgentStore: ObservableObject {
         }
     }
 
-    private func upsertApproval(id: String, toolName: String, inputSummary: String) {
+    private func upsertApproval(id: String, agentId: String, toolName: String, inputSummary: String) {
         let now = Date()
         let approval = PendingApproval(
             id: id,
-            agentId: "approval",
+            agentId: agentId,
             toolName: toolName,
             inputSummary: inputSummary,
             receivedAt: now,

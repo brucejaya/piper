@@ -96,6 +96,7 @@ final class TransportPiperBridge: PiperBridge {
             continuation.yield(.response(id: id, ok: ok, error: error))
         case .approvalRequest(let id, let toolName, let input):
             continuation.yield(.approvalRequest(
+                instanceKey: activeInstanceKey,
                 id: id,
                 toolName: toolName,
                 inputSummary: Self.inputSummary(input)

@@ -163,7 +163,7 @@ final class AgentStoreTests: XCTestCase {
             historyStore: historyStore
         )
 
-        bridge.emit(.approvalRequest(id: "approval-1", toolName: "shell", inputSummary: "npm test"))
+        bridge.emit(.approvalRequest(instanceKey: nil, id: "approval-1", toolName: "shell", inputSummary: "npm test"))
         try await Task.sleep(nanoseconds: 50_000_000)
 
         XCTAssertEqual(store.events.first?.id, "approval-1")
@@ -201,8 +201,8 @@ final class AgentStoreTests: XCTestCase {
         let bridge = MockPiperBridge()
         let store = AgentStore(bridge: bridge, identityStore: MemoryPeerIdentityStore())
 
-        bridge.emit(.approvalRequest(id: "approval-1", toolName: "shell", inputSummary: "npm test"))
-        bridge.emit(.approvalRequest(id: "approval-1", toolName: "shell", inputSummary: "npm test"))
+        bridge.emit(.approvalRequest(instanceKey: nil, id: "approval-1", toolName: "shell", inputSummary: "npm test"))
+        bridge.emit(.approvalRequest(instanceKey: nil, id: "approval-1", toolName: "shell", inputSummary: "npm test"))
         try await Task.sleep(nanoseconds: 50_000_000)
 
         XCTAssertEqual(store.pendingApprovals.count, 1)
@@ -210,11 +210,24 @@ final class AgentStoreTests: XCTestCase {
         XCTAssertEqual(store.pendingApprovals.first?.status, .pending)
     }
 
+    func testApprovalRequestsUseInstanceKeyWhenAvailable() async throws {
+        let bridge = MockPiperBridge()
+        let store = AgentStore(bridge: bridge, identityStore: MemoryPeerIdentityStore())
+        let key = String(repeating: "a", count: 64)
+
+        store.addAgent(instanceKey: key)
+        bridge.emit(.approvalRequest(instanceKey: key, id: "approval-1", toolName: "shell", inputSummary: "npm test"))
+        try await Task.sleep(nanoseconds: 50_000_000)
+
+        XCTAssertEqual(store.pendingApprovals.first?.agentId, key)
+        XCTAssertEqual(store.events.first?.agentId, key)
+    }
+
     func testApprovalDecisionSendsBridgeResponseAndRecordsOutcome() async throws {
         let bridge = MockPiperBridge()
         let store = AgentStore(bridge: bridge, identityStore: MemoryPeerIdentityStore())
 
-        bridge.emit(.approvalRequest(id: "approval-1", toolName: "shell", inputSummary: "npm test"))
+        bridge.emit(.approvalRequest(instanceKey: nil, id: "approval-1", toolName: "shell", inputSummary: "npm test"))
         try await Task.sleep(nanoseconds: 50_000_000)
 
         guard let approval = store.pendingApprovals.first else {
