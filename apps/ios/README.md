@@ -52,6 +52,7 @@ The scaffold includes:
 - Piper protocol DTOs matching `docs/protocol.md`.
 - JSONL wire codec for Piper client and server protocol messages.
 - Bridge abstraction matching `docs/ios-networking-spike.md`.
+- Transport-backed bridge adapter ready for a real HyperDHT stream.
 - Mock bridge for UI/state development before the Bare/Pear-end bridge lands.
 - Peer identity store protocol with Keychain production storage and an in-memory test implementation.
 - Billing model and StoreKit client boundary for monthly, annual, and lifetime products.
