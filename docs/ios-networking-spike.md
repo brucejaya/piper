@@ -75,6 +75,8 @@ Bridge events should mirror `docs/protocol.md`:
 
 The Swift side should not know HyperDHT internals. It should know peer keys, connection states, request ids, and typed protocol messages.
 
+The app scaffold includes `PiperWireCodec`, a transport-agnostic JSONL codec for these messages. The real HyperDHT bridge should reuse that codec so SwiftUI state, tests, and the eventual Bare/Pear-end networking path share the same protocol boundary.
+
 ## First Spike Milestones
 
 1. Create a minimal SwiftUI app target. Done as an XcodeGen scaffold in `apps/ios/`.

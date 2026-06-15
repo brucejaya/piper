@@ -16,6 +16,7 @@ const requiredFiles = [
   "apps/ios/PiperApp/Billing/PreviewBillingClient.swift",
   "apps/ios/PiperApp/Billing/StoreKitBillingClient.swift",
   "apps/ios/PiperApp/Models/PiperProtocol.swift",
+  "apps/ios/PiperApp/Networking/PiperWireCodec.swift",
   "apps/ios/PiperApp/Notifications/NotificationClient.swift",
   "apps/ios/PiperApp/Notifications/NotificationStore.swift",
   "apps/ios/PiperApp/Persistence/AgentRegistryStore.swift",
@@ -34,6 +35,7 @@ const requiredFiles = [
   "apps/ios/PiperAppTests/BillingStoreTests.swift",
   "apps/ios/PiperAppTests/NotificationStoreTests.swift",
   "apps/ios/PiperAppTests/PiperProtocolTests.swift",
+  "apps/ios/PiperAppTests/PiperWireCodecTests.swift",
   "apps/ios/PiperAppTests/SessionHistoryStoreTests.swift",
   "docs/pricing.md",
   "docs/app-store-release.md",
@@ -97,6 +99,10 @@ const protocol = readFileSync(join(root, "apps/ios/PiperApp/Models/PiperProtocol
 assert.match(protocol, /currentVersion = 1/);
 assert.match(protocol, /struct InstancePresence/);
 assert.match(protocol, /struct SurfaceEnvelope/);
+
+const wireCodec = readFileSync(join(root, "apps/ios/PiperApp/Networking/PiperWireCodec.swift"), "utf8");
+assert.match(wireCodec, /PiperLineDecoder/);
+assert.match(wireCodec, /approval_request/);
 
 const bridge = readFileSync(join(root, "apps/ios/PiperApp/Bridge/PiperBridge.swift"), "utf8");
 assert.match(bridge, /sendApproval/);

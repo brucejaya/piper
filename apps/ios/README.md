@@ -50,6 +50,7 @@ The scaffold includes:
 - Agent dashboard placeholder.
 - Session placeholder.
 - Piper protocol DTOs matching `docs/protocol.md`.
+- JSONL wire codec for Piper client and server protocol messages.
 - Bridge abstraction matching `docs/ios-networking-spike.md`.
 - Mock bridge for UI/state development before the Bare/Pear-end bridge lands.
 - Peer identity store protocol with Keychain production storage and an in-memory test implementation.
