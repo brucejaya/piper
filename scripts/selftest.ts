@@ -14,7 +14,16 @@ import { randomBytes } from "node:crypto";
 import DHT from "hyperdht";
 import createTestnet from "hyperdht/testnet";
 import { Allowlist } from "../src/allowlist.js";
-import { createLineDecoder, createSurface, encode, isSurfaceEnvelope, type InboundMessage } from "../src/protocol.js";
+import {
+  createAuthRequestSurface,
+  createAuthResultSurface,
+  createLineDecoder,
+  createSurface,
+  createSurfaceProposal,
+  encode,
+  isSurfaceEnvelope,
+  type InboundMessage,
+} from "../src/protocol.js";
 import { Transport, type Peer } from "../src/transport.js";
 
 // In-memory allowlist (skip disk) by subclassing.
@@ -84,6 +93,23 @@ function checkProtocolDecoder() {
   assert.equal(isSurfaceEnvelope({ ...surface, type: "custom.inventory.low_stock" }), true);
   assert.equal(isSurfaceEnvelope({ ...surface, surface: "custom" }), false);
   assert.equal(surface.fallback, "Agent started work");
+  assert.equal(isSurfaceEnvelope(createSurfaceProposal({
+    proposedType: "custom.inventory.low_stock",
+    rationale: "User wants low-stock alerts",
+  })), true);
+  assert.equal(isSurfaceEnvelope(createAuthRequestSurface({
+    id: "auth-1",
+    mode: "open_url",
+    origin: "https://example.com/login",
+    domain: "example.com",
+    reason: "Agent needs user-assisted login",
+    expiresAt: 456,
+  })), true);
+  assert.equal(isSurfaceEnvelope(createAuthResultSurface({
+    id: "auth-result-1",
+    requestId: "auth-1",
+    status: "completed",
+  })), true);
   console.log("[ok] protocol decoder handled partial, CRLF, malformed, and oversized frames");
   console.log("[ok] surface envelope helpers validate required fallback fields");
 }
@@ -145,6 +171,12 @@ async function main() {
   const got = received.find((r) => r.msg.t === "prompt")!.msg as any;
   assert.equal(got.message, "hello instance");
   console.log("[ok] instance received the peer's prompt message");
+
+  good.socket.write(encode({ t: "auth_result", id: "auth-1", status: "completed", note: "signed in on phone" }));
+  await waitFor(() => received.some((r) => r.msg.t === "auth_result"), 8000, "inbound auth result");
+  const authResult = received.find((r) => r.msg.t === "auth_result")!.msg as any;
+  assert.equal(authResult.status, "completed");
+  console.log("[ok] instance received a non-secret auth result message");
 
   // --- 2. instance -> peer broadcast ---
   transport.broadcast({ t: "event", event: { type: "agent_start" } });

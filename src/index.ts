@@ -3,7 +3,18 @@ import { hostname } from "node:os";
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 import { Allowlist } from "./allowlist.js";
 import { loadOrCreateIdentity } from "./identity.js";
-import { PROTOCOL_VERSION, createSurface, shortKey, type InboundMessage, type InstancePresence, type SurfaceEnvelope } from "./protocol.js";
+import {
+  PROTOCOL_VERSION,
+  createAuthRequestSurface,
+  createAuthResultSurface,
+  createSurface,
+  createSurfaceProposal,
+  shortKey,
+  type AuthResultStatus,
+  type InboundMessage,
+  type InstancePresence,
+  type SurfaceEnvelope,
+} from "./protocol.js";
 import { Transport, type Peer } from "./transport.js";
 
 /**
@@ -32,7 +43,10 @@ const FORWARDED_EVENTS = [
 // local session. Enable with PIPER_APPROVALS=remote.
 const APPROVALS_ENABLED = (process.env.PIPER_APPROVALS ?? "off") === "remote";
 const APPROVAL_TIMEOUT_MS = 30_000;
+const AUTH_REQUEST_TIMEOUT_MS = 10 * 60_000;
 const PEER_KEY_RE = /^[0-9a-f]{64}$/;
+const AUTH_RESULT_STATUSES = new Set<AuthResultStatus>(["completed", "failed", "expired", "cancelled", "rejected"]);
+const LOCAL_AUTH_HOSTS = new Set(["localhost", "127.0.0.1", "::1"]);
 
 /**
  * Optional override for the DHT bootstrap nodes. Defaults to Holepunch's public
@@ -60,6 +74,7 @@ export default function piper(pi: ExtensionAPI): void {
   let streaming = false;
   const label = process.env.PIPER_LABEL ?? hostname();
   const pendingApprovals = new Map<string, (decision: "allow" | "block") => void>();
+  const pendingAuthRequests = new Map<string, { domain: string; reason: string }>();
 
   function presence(ctx: any): InstancePresence {
     let model: string | undefined;
@@ -220,6 +235,32 @@ export default function piper(pi: ExtensionAPI): void {
         break;
       }
 
+      case "auth_result": {
+        if (!AUTH_RESULT_STATUSES.has(msg.status)) {
+          fail(msg.id, `invalid auth result status: ${String(msg.status)}`);
+          break;
+        }
+        const pending = pendingAuthRequests.get(msg.id);
+        if (!pending) {
+          fail(msg.id, "unknown or expired auth request");
+          break;
+        }
+        pendingAuthRequests.delete(msg.id);
+        broadcastSurface(createAuthResultSurface({
+          id: randomUUID(),
+          requestId: msg.id,
+          status: msg.status,
+          note: msg.note,
+          source: surfaceSource(ctx),
+        }));
+        ctx.ui?.notify?.(
+          `Piper auth ${msg.status} for ${pending.domain}${msg.note ? `: ${msg.note}` : ""}`,
+          msg.status === "completed" ? "info" : "warning",
+        );
+        ok(msg.id);
+        break;
+      }
+
       default:
         fail((msg as { id?: string }).id, `unknown message type: ${String((msg as { t?: unknown }).t)}`);
         break;
@@ -374,6 +415,75 @@ export default function piper(pi: ExtensionAPI): void {
           : `Peer ${shortKey(key)} was not paired.${disconnected > 0 ? ` Disconnected ${disconnected} active connection(s).` : ""}`,
         removed ? "info" : "warning",
       );
+    },
+  });
+
+  pi.registerCommand("piper-surface-propose", {
+    description: "Propose a typed surface schema: /piper-surface-propose <type> [rationale]",
+    handler: async (args, ctx) => {
+      const [proposedType, ...rest] = (args ?? "").trim().split(/\s+/).filter(Boolean);
+      if (!proposedType) {
+        ctx.ui?.notify?.("Usage: /piper-surface-propose <type> [rationale]", "error");
+        return;
+      }
+      const rationale = rest.join(" ").trim() || "Agent requested richer display for this surface type.";
+      const surface = createSurfaceProposal({
+        proposedType,
+        rationale,
+        source: surfaceSource(ctx),
+      });
+      broadcastSurface(surface);
+      ctx.ui?.notify?.(`Piper surface proposal sent: ${proposedType}`, "info");
+    },
+  });
+
+  pi.registerCommand("piper-auth", {
+    description: "Request remote auth handoff: /piper-auth <url> [reason]",
+    handler: async (args, ctx) => {
+      const [rawUrl, ...rest] = (args ?? "").trim().split(/\s+/).filter(Boolean);
+      if (!rawUrl) {
+        ctx.ui?.notify?.("Usage: /piper-auth <https-url> [reason]", "error");
+        return;
+      }
+
+      let url: URL;
+      try {
+        url = new URL(rawUrl);
+      } catch {
+        ctx.ui?.notify?.("Piper auth request needs a valid URL.", "error");
+        return;
+      }
+      if (url.protocol !== "https:" && !(url.protocol === "http:" && LOCAL_AUTH_HOSTS.has(url.hostname))) {
+        ctx.ui?.notify?.("Piper auth request requires https, except for localhost development URLs.", "error");
+        return;
+      }
+
+      const id = randomUUID();
+      const reason = rest.join(" ").trim() || "Agent needs user-assisted authentication to continue.";
+      const domain = url.hostname;
+      pendingAuthRequests.set(id, { domain, reason });
+      setTimeout(() => {
+        if (!pendingAuthRequests.delete(id)) return;
+        broadcastSurface(createAuthResultSurface({
+          id: randomUUID(),
+          requestId: id,
+          status: "expired",
+          source: surfaceSource(ctx),
+        }));
+      }, AUTH_REQUEST_TIMEOUT_MS);
+
+      broadcastSurface(createAuthRequestSurface({
+        id,
+        mode: "open_url",
+        origin: url.toString(),
+        domain,
+        reason,
+        expiresAt: Date.now() + AUTH_REQUEST_TIMEOUT_MS,
+        requestedScope: "user-assisted authentication",
+        sessionDestination: "agent-browser",
+        source: surfaceSource(ctx),
+      }));
+      ctx.ui?.notify?.(`Piper auth request sent for ${domain} (${id})`, "info");
     },
   });
 }

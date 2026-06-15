@@ -139,6 +139,18 @@ Respond to an approval request.
 
 `decision` is either `allow` or `block`.
 
+### auth_result
+
+Respond to an auth handoff request with non-secret completion metadata.
+
+```json
+{"t":"auth_result","id":"auth-request-id","status":"completed","note":"signed in on phone"}
+```
+
+`status` is one of `completed`, `failed`, `expired`, `cancelled`, or `rejected`.
+
+This message must not include passwords, passkeys, one-time codes, cookies, refresh tokens, bearer tokens, or other credentials.
+
 ## Instance to Manager Messages
 
 ### hello
@@ -201,6 +213,17 @@ Current built-in surface types include:
 - `auth.result`
 
 See `docs/surfaces.md` for field-level schema guidance, custom surface proposals, and remote authentication handoff rules.
+
+The extension currently emits surfaces for agent lifecycle, tool lifecycle, remote approval context, surface proposals, auth requests, and auth results.
+
+Pi-side commands:
+
+```text
+/piper-surface-propose <type> [rationale]
+/piper-auth <https-url> [reason]
+```
+
+`/piper-auth` accepts HTTPS URLs. Plain HTTP is reserved for localhost development targets only.
 
 ### response
 

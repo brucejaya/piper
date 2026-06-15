@@ -26,6 +26,8 @@ export interface InstancePresence {
 
 export type SurfaceKind = "event" | "artifact" | "metric" | "action" | "approval" | "proposal" | "auth";
 export type SurfacePriority = "low" | "normal" | "high" | "critical";
+export type AuthRequestMode = "open_url" | "oauth_consent" | "mfa" | "account_selection" | "reauth";
+export type AuthResultStatus = "completed" | "failed" | "expired" | "cancelled" | "rejected";
 const SURFACE_KINDS: readonly SurfaceKind[] = ["event", "artifact", "metric", "action", "approval", "proposal", "auth"];
 const SURFACE_PRIORITIES: readonly SurfacePriority[] = ["low", "normal", "high", "critical"];
 
@@ -82,7 +84,8 @@ export type InboundMessage =
   | { t: "abort"; id?: string }
   | { t: "get_state"; id: string }
   | { t: "get_messages"; id: string }
-  | { t: "approval_response"; id: string; decision: "allow" | "block"; reason?: string };
+  | { t: "approval_response"; id: string; decision: "allow" | "block"; reason?: string }
+  | { t: "auth_result"; id: string; status: AuthResultStatus; note?: string };
 
 /** Instance -> peer (manager). */
 export type OutboundMessage =
@@ -136,6 +139,108 @@ export function createSurface(input: {
     ...(input.display ? { display: input.display } : {}),
     payload: toJsonRecord(input.payload),
   };
+}
+
+export function createSurfaceProposal(input: {
+  proposedType: string;
+  rationale: string;
+  id?: string;
+  requestedDisplay?: string;
+  sample?: unknown;
+  source?: SurfaceSource;
+  ts?: number;
+}): SurfaceEnvelope {
+  return createSurface({
+    surface: "proposal",
+    type: "surface.proposal",
+    id: input.id ?? `proposal-${Date.now()}`,
+    ts: input.ts,
+    source: input.source,
+    summary: `Surface proposal: ${input.proposedType}`,
+    payload: {
+      proposedType: input.proposedType,
+      requestedDisplay: input.requestedDisplay ?? "card",
+      sample: toJsonRecord(input.sample),
+      rationale: input.rationale,
+    },
+    display: {
+      title: "Surface proposal",
+      subtitle: input.proposedType,
+      priority: "normal",
+      icon: "layout-template",
+      group: "surfaces",
+    },
+  });
+}
+
+export function createAuthRequestSurface(input: {
+  id: string;
+  mode: AuthRequestMode;
+  origin: string;
+  domain: string;
+  reason: string;
+  expiresAt: number;
+  requestedScope?: string;
+  sessionDestination?: string;
+  source?: SurfaceSource;
+  ts?: number;
+}): SurfaceEnvelope {
+  return createSurface({
+    surface: "auth",
+    type: "auth.request",
+    id: input.id,
+    ts: input.ts,
+    source: input.source,
+    summary: `Authentication requested for ${input.domain}`,
+    payload: {
+      mode: input.mode,
+      origin: input.origin,
+      domain: input.domain,
+      reason: input.reason,
+      expiresAt: input.expiresAt,
+      requestedScope: input.requestedScope ?? "",
+      sessionDestination: input.sessionDestination ?? "agent-browser",
+    },
+    display: {
+      title: "Authentication requested",
+      subtitle: input.domain,
+      priority: "critical",
+      icon: "key-round",
+      group: "auth",
+    },
+  });
+}
+
+export function createAuthResultSurface(input: {
+  id: string;
+  requestId: string;
+  status: AuthResultStatus;
+  completedAt?: number;
+  note?: string;
+  source?: SurfaceSource;
+  ts?: number;
+}): SurfaceEnvelope {
+  return createSurface({
+    surface: "auth",
+    type: "auth.result",
+    id: input.id,
+    ts: input.ts,
+    source: input.source,
+    summary: `Authentication ${input.status}`,
+    payload: {
+      requestId: input.requestId,
+      status: input.status,
+      completedAt: input.completedAt ?? Date.now(),
+      note: input.note ?? "",
+    },
+    display: {
+      title: "Authentication result",
+      subtitle: input.status,
+      priority: input.status === "completed" ? "normal" : "high",
+      icon: input.status === "completed" ? "check" : "x",
+      group: "auth",
+    },
+  });
 }
 
 export function isSurfaceEnvelope(value: unknown): value is SurfaceEnvelope {

@@ -141,6 +141,12 @@ Suggested payload:
 
 Proposals are inert until the user approves elevated treatment. Rejected proposals must not alter client behavior.
 
+The Pi extension can emit one with:
+
+```text
+/piper-surface-propose custom.inventory.low_stock User wants low-stock alerts
+```
+
 ### `auth.request`
 
 Use when an agent is blocked on user-assisted authentication, MFA, account selection, OAuth consent, or reauthentication.
@@ -163,6 +169,12 @@ Prohibited payloads:
 
 The first implementation should let the user complete auth from their own device and return only non-secret completion status.
 
+The Pi extension can emit one with:
+
+```text
+/piper-auth https://example.com/login Agent needs dashboard access to continue
+```
+
 ### `auth.result`
 
 Use for non-secret completion metadata after an auth handoff.
@@ -180,6 +192,12 @@ Allowed statuses:
 - `expired`
 - `cancelled`
 - `rejected`
+
+A manager can respond with:
+
+```json
+{"t":"auth_result","id":"auth-1","status":"completed","note":"signed in on phone"}
+```
 
 ## Versioning
 

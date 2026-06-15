@@ -12,7 +12,15 @@ import { createInterface } from "node:readline";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import DHT from "hyperdht";
-import { createLineDecoder, encode, shortKey, type InboundMessage, type OutboundMessage, type SurfaceEnvelope } from "../src/protocol.js";
+import {
+  createLineDecoder,
+  encode,
+  shortKey,
+  type AuthResultStatus,
+  type InboundMessage,
+  type OutboundMessage,
+  type SurfaceEnvelope,
+} from "../src/protocol.js";
 
 type Command =
   | { kind: "interactive"; target: string }
@@ -23,6 +31,7 @@ type Command =
   | { kind: "abort"; target: string };
 
 const KEY_RE = /^[0-9a-f]{64}$/i;
+const AUTH_RESULT_STATUSES = new Set<AuthResultStatus>(["completed", "failed", "expired", "cancelled", "rejected"]);
 
 function loadPeerIdentity() {
   const dir = join(homedir(), ".piper-peer");
@@ -111,25 +120,29 @@ function printSurface(surface: SurfaceEnvelope): void {
   const title = surface.display?.title ?? surface.summary;
   const subtitle = surface.display?.subtitle ? ` - ${surface.display.subtitle}` : "";
   const priority = surface.display?.priority && surface.display.priority !== "normal" ? ` ${surface.display.priority}` : "";
+  const id = ` id=${surface.id}`;
 
   switch (surface.type) {
     case "git.commit":
-      console.log(`[surface:commit${priority}] ${title}${subtitle} ${JSON.stringify(surface.payload)}`);
+      console.log(`[surface:commit${priority}]${id} ${title}${subtitle} ${JSON.stringify(surface.payload)}`);
       break;
     case "task.update":
-      console.log(`[surface:task${priority}] ${title}${subtitle} ${JSON.stringify(surface.payload)}`);
+      console.log(`[surface:task${priority}]${id} ${title}${subtitle} ${JSON.stringify(surface.payload)}`);
       break;
     case "approval.request":
-      console.log(`[surface:approval${priority}] ${title}${subtitle} ${JSON.stringify(surface.payload)}`);
+      console.log(`[surface:approval${priority}]${id} ${title}${subtitle} ${JSON.stringify(surface.payload)}`);
+      break;
+    case "surface.proposal":
+      console.log(`[surface:proposal${priority}]${id} ${title}${subtitle} ${JSON.stringify(surface.payload)}`);
       break;
     case "auth.request":
-      console.log(`[surface:auth${priority}] ${title}${subtitle} ${JSON.stringify(surface.payload)}`);
+      console.log(`[surface:auth${priority}]${id} ${title}${subtitle} ${JSON.stringify(surface.payload)}`);
       break;
     case "auth.result":
-      console.log(`[surface:auth-result${priority}] ${title}${subtitle} ${JSON.stringify(surface.payload)}`);
+      console.log(`[surface:auth-result${priority}]${id} ${title}${subtitle} ${JSON.stringify(surface.payload)}`);
       break;
     default:
-      console.log(`[surface:${surface.type}${priority}] ${surface.fallback} ${JSON.stringify(surface.payload)}`);
+      console.log(`[surface:${surface.type}${priority}]${id} ${surface.fallback} ${JSON.stringify(surface.payload)}`);
       break;
   }
 }
@@ -209,7 +222,16 @@ async function connect(command: Exclude<Command, { kind: "print_key" }>, kp: any
       const text = line.trim();
       if (!text) return;
       if (text === "/help") {
-        console.log(["Commands:", "  /state", "  /messages", "  /abort", "  /steer <message>", "  /quit", "  <message> sends a prompt"].join("\n"));
+        console.log([
+          "Commands:",
+          "  /state",
+          "  /messages",
+          "  /abort",
+          "  /steer <message>",
+          "  /auth-result <request-id> <completed|failed|expired|cancelled|rejected> [note]",
+          "  /quit",
+          "  <message> sends a prompt",
+        ].join("\n"));
       } else if (text === "/quit" || text === "/exit") {
         socket.destroy();
       } else if (text === "/state") {
@@ -220,6 +242,14 @@ async function connect(command: Exclude<Command, { kind: "print_key" }>, kp: any
         socket.write(encode({ t: "abort", id: randomUUID() }));
       } else if (text.startsWith("/steer ")) {
         socket.write(encode({ t: "steer", id: randomUUID(), message: text.slice("/steer ".length).trim() }));
+      } else if (text.startsWith("/auth-result ")) {
+        const [requestId, rawStatus, ...noteParts] = text.slice("/auth-result ".length).trim().split(/\s+/);
+        const status = rawStatus as AuthResultStatus;
+        if (!requestId || !AUTH_RESULT_STATUSES.has(status)) {
+          console.log("Usage: /auth-result <request-id> <completed|failed|expired|cancelled|rejected> [note]");
+          return;
+        }
+        socket.write(encode({ t: "auth_result", id: requestId, status, note: noteParts.join(" ").trim() || undefined }));
       } else {
         socket.write(encode({ t: "prompt", id: randomUUID(), message: text }));
       }
