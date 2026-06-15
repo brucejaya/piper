@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { hostname } from "node:os";
 import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
-import { Allowlist } from "./allowlist.js";
+import { Allowlist, PEER_KEY_RE } from "./allowlist.js";
 import { loadOrCreateIdentity } from "./identity.js";
 import {
   PROTOCOL_VERSION,
@@ -44,7 +44,6 @@ const FORWARDED_EVENTS = [
 const APPROVALS_ENABLED = (process.env.PIPER_APPROVALS ?? "off") === "remote";
 const APPROVAL_TIMEOUT_MS = positiveEnvInt("PIPER_APPROVAL_TIMEOUT_MS", 30_000);
 const AUTH_REQUEST_TIMEOUT_MS = 10 * 60_000;
-const PEER_KEY_RE = /^[0-9a-f]{64}$/;
 const AUTH_RESULT_STATUSES = new Set<AuthResultStatus>(["completed", "failed", "expired", "cancelled", "rejected"]);
 const LOCAL_AUTH_HOSTS = new Set(["localhost", "127.0.0.1", "::1"]);
 

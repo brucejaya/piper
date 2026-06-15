@@ -63,6 +63,8 @@ Typed surfaces are structured data from a paired agent, not trusted UI code. Cli
 
 Users should pair only devices they control.
 
+Operational pairing and revocation steps are documented in `docs/pairing.md`.
+
 The UI and docs should show:
 
 - Full public key for copy/paste.

@@ -37,6 +37,8 @@ The seed and secret key are sensitive and must not be shared.
 
 Pairing is manual. A manager peer key must be added to the instance allowlist before the manager can connect.
 
+See `docs/pairing.md` for user-facing pairing, revocation, fingerprint, and corrupt-allowlist recovery guidance.
+
 Current command:
 
 ```text

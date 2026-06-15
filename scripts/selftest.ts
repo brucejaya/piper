@@ -11,6 +11,9 @@
  */
 import assert from "node:assert";
 import { randomBytes } from "node:crypto";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import DHT from "hyperdht";
 import createTestnet from "hyperdht/testnet";
 import { Allowlist } from "../src/allowlist.js";
@@ -121,8 +124,36 @@ function checkProtocolDecoder() {
   console.log("[ok] surface envelope helpers validate required fallback fields");
 }
 
+function checkAllowlistPersistence() {
+  const dir = mkdtempSync(join(tmpdir(), "piper-allowlist-"));
+  try {
+    const keyA = "a".repeat(64);
+    const keyB = "b".repeat(64);
+    const allow = new Allowlist(dir);
+    assert.equal(allow.has(keyA), false);
+    allow.add(keyB.toUpperCase());
+    allow.add(keyA);
+    allow.add(keyA);
+    assert.deepEqual(allow.list(), [keyA, keyB]);
+    assert.equal(allow.has(keyB), true);
+    assert.equal(allow.has("not-a-key"), false);
+    assert.throws(() => allow.add("not-a-key"), /invalid peer key/);
+    assert.equal(allow.remove(keyA), true);
+    assert.equal(allow.remove(keyA), false);
+    assert.deepEqual(allow.list(), [keyB]);
+
+    writeFileSync(join(dir, ".pi", "piper", "allowed.json"), "{not-json");
+    const corrupt = new Allowlist(dir);
+    assert.deepEqual(corrupt.list(), []);
+    console.log("[ok] allowlist validates, de-duplicates, removes, and fails closed when corrupt");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
 async function main() {
   checkProtocolDecoder();
+  checkAllowlistPersistence();
 
   const testnet = await createTestnet(3);
   const bootstrap = testnet.bootstrap;

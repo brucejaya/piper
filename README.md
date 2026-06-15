@@ -26,7 +26,8 @@ until those clients exist.
   manager to allow or block tool calls.
 
 See [docs/protocol.md](docs/protocol.md) for the wire protocol and
-[docs/security.md](docs/security.md) for the trust model.
+[docs/security.md](docs/security.md) for the trust model. Pairing and revocation
+details live in [docs/pairing.md](docs/pairing.md).
 
 ## Install the Extension
 
@@ -118,6 +119,7 @@ scripts/tooltest.ts   live tool forwarding + approvals test
 
 - [docs/protocol.md](docs/protocol.md) - current wire protocol.
 - [docs/compatibility.md](docs/compatibility.md) - versioning and compatibility policy.
+- [docs/pairing.md](docs/pairing.md) - public-key pairing and revocation.
 - [docs/security.md](docs/security.md) - trust model and threat boundaries.
 - [docs/cli.md](docs/cli.md) - reference manager CLI usage.
 - [docs/ios-prd.md](docs/ios-prd.md) - paid iOS app product requirements.
