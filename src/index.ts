@@ -42,11 +42,18 @@ const FORWARDED_EVENTS = [
 // Remote approvals are opt-in for v0 so the extension never blocks a normal
 // local session. Enable with PIPER_APPROVALS=remote.
 const APPROVALS_ENABLED = (process.env.PIPER_APPROVALS ?? "off") === "remote";
-const APPROVAL_TIMEOUT_MS = 30_000;
+const APPROVAL_TIMEOUT_MS = positiveEnvInt("PIPER_APPROVAL_TIMEOUT_MS", 30_000);
 const AUTH_REQUEST_TIMEOUT_MS = 10 * 60_000;
 const PEER_KEY_RE = /^[0-9a-f]{64}$/;
 const AUTH_RESULT_STATUSES = new Set<AuthResultStatus>(["completed", "failed", "expired", "cancelled", "rejected"]);
 const LOCAL_AUTH_HOSTS = new Set(["localhost", "127.0.0.1", "::1"]);
+
+function positiveEnvInt(name: string, fallback: number): number {
+  const raw = process.env[name];
+  if (!raw) return fallback;
+  const parsed = Number(raw);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+}
 
 /**
  * Optional override for the DHT bootstrap nodes. Defaults to Holepunch's public
@@ -73,7 +80,7 @@ export default function piper(pi: ExtensionAPI): void {
   let identityHex = "";
   let streaming = false;
   const label = process.env.PIPER_LABEL ?? hostname();
-  const pendingApprovals = new Map<string, (decision: "allow" | "block") => void>();
+  const pendingApprovals = new Map<string, { resolve: (decision: "allow" | "block") => void; timer: NodeJS.Timeout }>();
   const pendingAuthRequests = new Map<string, { domain: string; reason: string }>();
 
   function presence(ctx: any): InstancePresence {
@@ -177,6 +184,19 @@ export default function piper(pi: ExtensionAPI): void {
     transport?.broadcast({ t: "surface", surface });
   }
 
+  function resolvePendingApproval(id: string, decision: "allow" | "block"): boolean {
+    const pending = pendingApprovals.get(id);
+    if (!pending) return false;
+    pendingApprovals.delete(id);
+    clearTimeout(pending.timer);
+    pending.resolve(decision);
+    return true;
+  }
+
+  function allowAllPendingApprovals(): void {
+    for (const id of [...pendingApprovals.keys()]) resolvePendingApproval(id, "allow");
+  }
+
   async function handleInbound(ctx: any, peer: Peer, msg: InboundMessage): Promise<void> {
     const ok = (id?: string, data?: unknown) => id && peer.send({ t: "response", id, ok: true, data });
     const fail = (id: string | undefined, error: string) => id && peer.send({ t: "response", id, ok: false, error });
@@ -227,11 +247,7 @@ export default function piper(pi: ExtensionAPI): void {
       }
 
       case "approval_response": {
-        const resolve = pendingApprovals.get(msg.id);
-        if (resolve) {
-          pendingApprovals.delete(msg.id);
-          resolve(msg.decision);
-        }
+        resolvePendingApproval(msg.id, msg.decision);
         break;
       }
 
@@ -284,6 +300,7 @@ export default function piper(pi: ExtensionAPI): void {
       onDisconnect: (peer) => {
         ctx.ui?.setStatus?.("piper", statusLine());
         ctx.ui?.notify?.(`Piper: peer disconnected ${shortKey(peer.remoteKey)}`, "info");
+        if ((transport?.peerCount() ?? 0) === 0) allowAllPendingApprovals();
       },
       log: (line) => ctx.ui?.notify?.(`Piper: ${line}`, "warning"),
     }, piperDhtOptions());
@@ -353,10 +370,10 @@ export default function piper(pi: ExtensionAPI): void {
         },
       }));
       const decision = await new Promise<"allow" | "block">((resolve) => {
-        pendingApprovals.set(id, resolve);
-        setTimeout(() => {
-          if (pendingApprovals.delete(id)) resolve("allow");
+        const timer = setTimeout(() => {
+          resolvePendingApproval(id, "allow");
         }, APPROVAL_TIMEOUT_MS);
+        pendingApprovals.set(id, { resolve, timer });
       });
       if (decision === "block") return { block: true, reason: "Denied by remote Piper operator" };
     });

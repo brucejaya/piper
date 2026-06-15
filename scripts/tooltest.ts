@@ -7,6 +7,10 @@
  *   Phase 1 (ALLOW): peer approves -> tool runs -> output forwarded to peer
  *   Phase 2 (BLOCK): peer denies   -> tool is blocked -> command never runs
  *
+ * Set PIPER_APPROVAL_TIMEOUT_MS to a small value when manually checking timeout
+ * behavior. If the last remote peer disconnects during an approval, Piper
+ * resolves the pending approval as allow so the local session does not hang.
+ *
  * Run: npx tsx scripts/tooltest.ts
  */
 import { randomBytes, randomUUID } from "node:crypto";

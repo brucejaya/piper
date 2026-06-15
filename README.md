@@ -93,6 +93,7 @@ approval mode, and paired keys. Connected paired keys are marked.
 | --------------------- | ------------- | ------------------------------------------------- |
 | `PIPER_LABEL`         | hostname      | Friendly name advertised to managers              |
 | `PIPER_APPROVALS`     | `off`         | `remote` asks a connected manager before each tool |
+| `PIPER_APPROVAL_TIMEOUT_MS` | `30000` | Remote approval timeout before allowing locally |
 | `PIPER_AUTO_APPROVE`  | unset         | `1` makes the reference CLI auto-allow approvals  |
 | `PIPER_BOOTSTRAP`     | public DHT    | `host:port,...` private/testnet DHT bootstrap     |
 | `PI_CODING_AGENT_DIR` | `~/.pi/agent` | Pi config/auth/session dir for isolation          |
