@@ -1,6 +1,11 @@
 node_modules/
 dist/
 *.log
+.DS_Store
+DerivedData/
+apps/ios/Piper.xcodeproj/
+apps/ios/Piper.xcworkspace/
+apps/ios/DerivedData/
 
 # Pi project config + Piper instance identity/allowlist (never commit keys)
 .pi/

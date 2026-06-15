@@ -124,6 +124,7 @@ scripts/tooltest.ts   live tool forwarding + approvals test
 - [docs/cli.md](docs/cli.md) - reference manager CLI usage.
 - [docs/ios-prd.md](docs/ios-prd.md) - paid iOS app product requirements.
 - [docs/ios-networking-spike.md](docs/ios-networking-spike.md) - iOS HyperDHT networking approach.
+- [apps/ios/README.md](apps/ios/README.md) - native iOS app scaffold and Mac setup.
 - [docs/plans/2026-06-15-001-feat-piper-development-roadmap-plan.md](docs/plans/2026-06-15-001-feat-piper-development-roadmap-plan.md) - full development roadmap.
 
 ## Status

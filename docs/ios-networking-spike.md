@@ -77,8 +77,8 @@ The Swift side should not know HyperDHT internals. It should know peer keys, con
 
 ## First Spike Milestones
 
-1. Create a minimal SwiftUI app target.
-2. Generate and persist a peer seed in Keychain.
+1. Create a minimal SwiftUI app target. Done as an XcodeGen scaffold in `apps/ios/`.
+2. Generate and persist a peer seed in Keychain. Started with a `PeerIdentityStore` protocol and in-memory dev implementation; Keychain implementation is a Mac follow-up.
 3. Run a Bare/Pear-end bundle on iOS simulator.
 4. From the bridge, connect to a local Piper testnet instance by public key.
 5. Parse `hello` and `presence`.
