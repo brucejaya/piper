@@ -127,6 +127,8 @@ scripts/tooltest.ts   live tool forwarding + approvals test
 - [docs/ios-prd.md](docs/ios-prd.md) - paid iOS app product requirements.
 - [docs/ios-networking-spike.md](docs/ios-networking-spike.md) - iOS HyperDHT networking approach.
 - [apps/ios/README.md](apps/ios/README.md) - native iOS app scaffold and Mac setup.
+- [docs/app-store-release.md](docs/app-store-release.md) - TestFlight and App Store release gates.
+- [docs/support.md](docs/support.md) - pairing, connectivity, approval, purchase, and privacy support paths.
 - [docs/plans/2026-06-15-001-feat-piper-development-roadmap-plan.md](docs/plans/2026-06-15-001-feat-piper-development-roadmap-plan.md) - full development roadmap.
 
 ## Status

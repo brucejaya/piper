@@ -33,8 +33,10 @@ const requiredFiles = [
   "apps/ios/PiperAppTests/PiperProtocolTests.swift",
   "apps/ios/PiperAppTests/SessionHistoryStoreTests.swift",
   "docs/pricing.md",
+  "docs/app-store-release.md",
   "docs/privacy.md",
   "docs/push-notifications.md",
+  "docs/support.md",
 ];
 
 for (const file of requiredFiles) {
@@ -57,6 +59,14 @@ assert.match(billing, /unlocksOfficialApp/);
 const settingsView = readFileSync(join(root, "apps/ios/PiperApp/Views/SettingsView.swift"), "utf8");
 assert.match(settingsView, /Restore Purchases/);
 assert.match(settingsView, /Pairing and agent access still require the agent allowlist/);
+
+const appStoreRelease = readFileSync(join(root, "docs/app-store-release.md"), "utf8");
+assert.match(appStoreRelease, /TestFlight Validation/);
+assert.match(appStoreRelease, /app\.piper\.ios\.lifetime/);
+
+const support = readFileSync(join(root, "docs/support.md"), "utf8");
+assert.match(support, /Pairing Problems/);
+assert.match(support, /Purchase state does not pair agents/);
 
 const history = readFileSync(join(root, "apps/ios/PiperApp/Persistence/SessionHistoryStore.swift"), "utf8");
 assert.match(history, /FileSessionHistoryStore/);
