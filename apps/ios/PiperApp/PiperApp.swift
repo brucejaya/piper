@@ -9,12 +9,14 @@ struct PiperApp: App {
         registryStore: (try? FileAgentRegistryStore.defaultStore()) ?? MemoryAgentRegistryStore()
     )
     @StateObject private var billingStore = BillingStore(client: StoreKitBillingClient())
+    @StateObject private var notificationStore = NotificationStore(client: SystemNotificationClient())
 
     var body: some Scene {
         WindowGroup {
             AgentDashboardView()
                 .environmentObject(store)
                 .environmentObject(billingStore)
+                .environmentObject(notificationStore)
         }
     }
 }

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @EnvironmentObject private var billingStore: BillingStore
+    @EnvironmentObject private var notificationStore: NotificationStore
 
     var body: some View {
         List {
@@ -44,6 +45,23 @@ struct SettingsView: View {
                 }
             }
 
+            Section("Notifications") {
+                LabeledContent("Status", value: notificationStore.state.authorizationStatus.rawValue)
+                Button("Enable Notifications") {
+                    notificationStore.requestAuthorization()
+                }
+                .disabled(notificationStore.isLoading || notificationStore.state.authorizationStatus == .authorized)
+                Text("Notifications are wake hints only. Approval and session details are fetched after reconnecting over Piper.")
+                    .foregroundStyle(.secondary)
+            }
+
+            if let error = notificationStore.lastError {
+                Section("Notification Error") {
+                    Text(error)
+                        .foregroundStyle(.red)
+                }
+            }
+
             Section("Protocol") {
                 Text("Purchases unlock the official iOS experience only. Pairing and agent access still require the agent allowlist.")
                     .foregroundStyle(.secondary)
@@ -54,6 +72,7 @@ struct SettingsView: View {
             if billingStore.offers.isEmpty {
                 billingStore.refresh()
             }
+            notificationStore.refresh()
         }
     }
 }
@@ -62,5 +81,6 @@ struct SettingsView: View {
     NavigationStack {
         SettingsView()
             .environmentObject(BillingStore(client: PreviewBillingClient()))
+            .environmentObject(NotificationStore(client: PreviewNotificationClient()))
     }
 }

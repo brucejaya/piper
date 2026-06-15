@@ -16,6 +16,8 @@ const requiredFiles = [
   "apps/ios/PiperApp/Billing/PreviewBillingClient.swift",
   "apps/ios/PiperApp/Billing/StoreKitBillingClient.swift",
   "apps/ios/PiperApp/Models/PiperProtocol.swift",
+  "apps/ios/PiperApp/Notifications/NotificationClient.swift",
+  "apps/ios/PiperApp/Notifications/NotificationStore.swift",
   "apps/ios/PiperApp/Persistence/AgentRegistryStore.swift",
   "apps/ios/PiperApp/Persistence/SessionHistoryStore.swift",
   "apps/ios/PiperApp/Bridge/PiperBridge.swift",
@@ -30,6 +32,7 @@ const requiredFiles = [
   "apps/ios/PiperAppTests/AgentRegistryStoreTests.swift",
   "apps/ios/PiperAppTests/BillingTests.swift",
   "apps/ios/PiperAppTests/BillingStoreTests.swift",
+  "apps/ios/PiperAppTests/NotificationStoreTests.swift",
   "apps/ios/PiperAppTests/PiperProtocolTests.swift",
   "apps/ios/PiperAppTests/SessionHistoryStoreTests.swift",
   "docs/pricing.md",
@@ -59,7 +62,12 @@ assert.match(billing, /unlocksOfficialApp/);
 
 const settingsView = readFileSync(join(root, "apps/ios/PiperApp/Views/SettingsView.swift"), "utf8");
 assert.match(settingsView, /Restore Purchases/);
+assert.match(settingsView, /Enable Notifications/);
 assert.match(settingsView, /Pairing and agent access still require the agent allowlist/);
+
+const notificationStore = readFileSync(join(root, "apps/ios/PiperApp/Notifications/NotificationStore.swift"), "utf8");
+assert.match(notificationStore, /NotificationStore/);
+assert.match(notificationStore, /requestAuthorization/);
 
 const appStoreRelease = readFileSync(join(root, "docs/app-store-release.md"), "utf8");
 assert.match(appStoreRelease, /TestFlight Validation/);
