@@ -33,10 +33,13 @@ See [docs/protocol.md](docs/protocol.md) for the wire protocol and
 ```bash
 npm install
 npm run typecheck
+npm run clitest
 npm run selftest
 npm run livetest
 ```
 
+`clitest` checks the reference manager parser and identity persistence without
+opening a network socket.
 `selftest` is the offline transport and trust test over a local DHT testnet.
 `livetest` runs the real extension inside a real Pi SDK session backed by a real
 provider. It uses the isolated agent dir at `.pi/agent`; configure provider
@@ -77,6 +80,8 @@ Useful Pi commands:
 /piper
 /piper-allow <peer-key>
 /piper-deny <peer-key>
+/piper-surface-propose <type> [rationale]
+/piper-auth <https-url> [reason]
 ```
 
 `/piper` shows the instance key, label, listening state, connected peer count,
@@ -88,8 +93,10 @@ approval mode, and paired keys. Connected paired keys are marked.
 | --------------------- | ------------- | ------------------------------------------------- |
 | `PIPER_LABEL`         | hostname      | Friendly name advertised to managers              |
 | `PIPER_APPROVALS`     | `off`         | `remote` asks a connected manager before each tool |
+| `PIPER_AUTO_APPROVE`  | unset         | `1` makes the reference CLI auto-allow approvals  |
 | `PIPER_BOOTSTRAP`     | public DHT    | `host:port,...` private/testnet DHT bootstrap     |
 | `PI_CODING_AGENT_DIR` | `~/.pi/agent` | Pi config/auth/session dir for isolation          |
+| `PIPER_PEER_HOME`     | `~/.piper-peer` | Reference CLI identity dir override             |
 
 ## Layout
 
@@ -100,6 +107,7 @@ src/protocol.ts       wire types + newline-JSON framing
 src/transport.ts      HyperDHT server, allowlist gate, peers
 src/index.ts          Pi extension: bridges Pi <-> transport
 test-peer/cli.ts      terminal reference manager
+scripts/clitest.ts    offline reference CLI parser/identity checks
 scripts/selftest.ts   offline transport/trust integration test
 scripts/livetest.ts   live Pi bridge integration test
 scripts/tooltest.ts   live tool forwarding + approvals test
@@ -108,6 +116,7 @@ scripts/tooltest.ts   live tool forwarding + approvals test
 ## Project Docs
 
 - [docs/protocol.md](docs/protocol.md) - current wire protocol.
+- [docs/compatibility.md](docs/compatibility.md) - versioning and compatibility policy.
 - [docs/security.md](docs/security.md) - trust model and threat boundaries.
 - [docs/cli.md](docs/cli.md) - reference manager CLI usage.
 - [docs/ios-prd.md](docs/ios-prd.md) - paid iOS app product requirements.

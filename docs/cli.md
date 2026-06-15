@@ -32,6 +32,8 @@ Interactive commands:
 /messages
 /abort
 /steer <message>
+/approve <approval-id> [reason]
+/block <approval-id> [reason]
 /auth-result <request-id> <completed|failed|expired|cancelled|rejected> [note]
 /quit
 ```
@@ -72,7 +74,14 @@ npm run peer -- <instance-key> --abort
 
 ## Approvals
 
-When the instance sends an `approval_request`, the reference CLI prints the tool name and input, then auto-allows it. This keeps the reference client non-interactive for live approval tests. The official app should replace this with an explicit allow/block UI.
+When the instance sends an `approval_request`, the reference CLI prints the approval id, tool name, and input. Respond interactively:
+
+```text
+/approve <approval-id> [reason]
+/block <approval-id> [reason]
+```
+
+For unattended local tests, set `PIPER_AUTO_APPROVE=1` before launching the CLI. This keeps auto-allow behavior explicit instead of surprising.
 
 ## Typed Surfaces
 
@@ -113,4 +122,12 @@ On Windows PowerShell:
 
 ```powershell
 $env:PIPER_BOOTSTRAP="127.0.0.1:12345"; npm run peer -- <instance-key>
+```
+
+## CLI Tests
+
+Run parser and identity checks without opening a network socket:
+
+```bash
+npm run clitest
 ```

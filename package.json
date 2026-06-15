@@ -10,6 +10,7 @@
   },
   "scripts": {
     "peer": "tsx test-peer/cli.ts",
+    "clitest": "tsx scripts/clitest.ts",
     "selftest": "tsx scripts/selftest.ts",
     "livetest": "tsx scripts/livetest.ts",
     "tooltest": "tsx scripts/tooltest.ts",
