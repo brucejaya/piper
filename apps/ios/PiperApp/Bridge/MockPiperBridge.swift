@@ -3,6 +3,7 @@ import Foundation
 final class MockPiperBridge: PiperBridge {
     private let continuation: AsyncStream<PiperBridgeEvent>.Continuation
     let events: AsyncStream<PiperBridgeEvent>
+    private(set) var approvalResponses: [(id: String, decision: ApprovalDecision, reason: String?)] = []
 
     init() {
         var captured: AsyncStream<PiperBridgeEvent>.Continuation!
@@ -56,6 +57,7 @@ final class MockPiperBridge: PiperBridge {
     }
 
     func sendApproval(id: String, decision: ApprovalDecision, reason: String?) async throws {
+        approvalResponses.append((id: id, decision: decision, reason: reason))
         continuation.yield(.response(id: id, ok: true, error: nil))
     }
 

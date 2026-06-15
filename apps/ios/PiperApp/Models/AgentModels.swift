@@ -22,3 +22,24 @@ struct SessionEvent: Identifiable, Codable, Equatable {
     let detail: String
     let surface: SurfaceEnvelope?
 }
+
+enum ApprovalStatus: String, Codable, Equatable {
+    case pending
+    case allowed
+    case blocked
+    case expired
+}
+
+struct PendingApproval: Identifiable, Codable, Equatable {
+    let id: String
+    let agentId: String
+    let toolName: String
+    let inputSummary: String
+    let receivedAt: Date
+    let expiresAt: Date
+    var status: ApprovalStatus
+
+    var isActionable: Bool {
+        status == .pending && expiresAt > Date()
+    }
+}

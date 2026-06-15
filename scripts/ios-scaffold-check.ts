@@ -66,5 +66,12 @@ const bridge = readFileSync(join(root, "apps/ios/PiperApp/Bridge/PiperBridge.swi
 assert.match(bridge, /sendApproval/);
 assert.match(bridge, /sendAuthResult/);
 
+const agentModels = readFileSync(join(root, "apps/ios/PiperApp/Models/AgentModels.swift"), "utf8");
+assert.match(agentModels, /struct PendingApproval/);
+assert.match(agentModels, /enum ApprovalStatus/);
+
+const sessionView = readFileSync(join(root, "apps/ios/PiperApp/Views/SessionView.swift"), "utf8");
+assert.match(sessionView, /ApprovalCard/);
+
 console.log("[ok] iOS scaffold files and project spec are present");
 console.log("\nIOS SCAFFOLD CHECKS PASSED");

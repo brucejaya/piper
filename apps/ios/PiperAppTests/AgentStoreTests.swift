@@ -54,4 +54,38 @@ final class AgentStoreTests: XCTestCase {
         XCTAssertEqual(store.events.first?.id, "approval-1")
         XCTAssertEqual(try historyStore.loadRecent(limit: 10).first?.id, "approval-1")
     }
+
+    func testApprovalRequestsAreFirstClassAndDeduplicated() async throws {
+        let bridge = MockPiperBridge()
+        let store = AgentStore(bridge: bridge, identityStore: MemoryPeerIdentityStore())
+
+        bridge.emit(.approvalRequest(id: "approval-1", toolName: "shell", inputSummary: "npm test"))
+        bridge.emit(.approvalRequest(id: "approval-1", toolName: "shell", inputSummary: "npm test"))
+        try await Task.sleep(nanoseconds: 50_000_000)
+
+        XCTAssertEqual(store.pendingApprovals.count, 1)
+        XCTAssertEqual(store.pendingApprovals.first?.toolName, "shell")
+        XCTAssertEqual(store.pendingApprovals.first?.status, .pending)
+    }
+
+    func testApprovalDecisionSendsBridgeResponseAndRecordsOutcome() async throws {
+        let bridge = MockPiperBridge()
+        let store = AgentStore(bridge: bridge, identityStore: MemoryPeerIdentityStore())
+
+        bridge.emit(.approvalRequest(id: "approval-1", toolName: "shell", inputSummary: "npm test"))
+        try await Task.sleep(nanoseconds: 50_000_000)
+
+        guard let approval = store.pendingApprovals.first else {
+            XCTFail("approval should exist")
+            return
+        }
+
+        store.block(approval, reason: "unsafe")
+        try await Task.sleep(nanoseconds: 50_000_000)
+
+        XCTAssertEqual(store.pendingApprovals.first?.status, .blocked)
+        XCTAssertEqual(bridge.approvalResponses.first?.id, "approval-1")
+        XCTAssertEqual(bridge.approvalResponses.first?.decision, .block)
+        XCTAssertEqual(store.events.first?.title, "Approval blocked")
+    }
 }

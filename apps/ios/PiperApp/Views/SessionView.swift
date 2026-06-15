@@ -17,6 +17,18 @@ struct SessionView: View {
                     }
                 }
 
+                Section("Approvals") {
+                    let approvals = store.pendingApprovals.filter { $0.agentId == agent.id || $0.agentId == "approval" }
+                    if approvals.isEmpty {
+                        Text("No pending approvals")
+                            .foregroundStyle(.secondary)
+                    } else {
+                        ForEach(approvals) { approval in
+                            ApprovalCard(approval: approval)
+                        }
+                    }
+                }
+
                 Section("Recent Activity") {
                     ForEach(store.events.filter { $0.agentId == agent.id || $0.agentId == "approval" }) { event in
                         VStack(alignment: .leading, spacing: 4) {
@@ -51,5 +63,43 @@ struct SessionView: View {
                 }
             }
         }
+    }
+}
+
+private struct ApprovalCard: View {
+    @EnvironmentObject private var store: AgentStore
+    let approval: PendingApproval
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(approval.toolName)
+                    .font(.headline)
+                Spacer()
+                Text(approval.status.rawValue)
+                    .font(.caption)
+                    .foregroundStyle(approval.isActionable ? .orange : .secondary)
+            }
+
+            Text(approval.inputSummary)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(4)
+
+            if approval.isActionable {
+                HStack {
+                    Button("Block") {
+                        store.block(approval)
+                    }
+                    .buttonStyle(.bordered)
+
+                    Button("Allow") {
+                        store.approve(approval)
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+            }
+        }
+        .padding(.vertical, 4)
     }
 }

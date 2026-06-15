@@ -4,9 +4,11 @@ import Foundation
 final class AgentStore: ObservableObject {
     @Published private(set) var agents: [AgentConnection] = []
     @Published private(set) var events: [SessionEvent] = []
+    @Published private(set) var pendingApprovals: [PendingApproval] = []
     @Published private(set) var peerSeedAvailable = false
 
     private static let historyLimit = 500
+    private static let approvalTTL: TimeInterval = 300
 
     private let bridge: PiperBridge
     private let identityStore: PeerIdentityStore
@@ -63,6 +65,14 @@ final class AgentStore: ObservableObject {
         }
     }
 
+    func approve(_ approval: PendingApproval, reason: String? = nil) {
+        resolveApproval(approval, decision: .allow, reason: reason)
+    }
+
+    func block(_ approval: PendingApproval, reason: String? = nil) {
+        resolveApproval(approval, decision: .block, reason: reason)
+    }
+
     private func startEventLoop() {
         eventTask = Task { [weak self] in
             guard let self else { return }
@@ -104,6 +114,7 @@ final class AgentStore: ObservableObject {
                 surface: surface
             ))
         case .approvalRequest(let id, let toolName, let inputSummary):
+            upsertApproval(id: id, toolName: toolName, inputSummary: inputSummary)
             appendEvent(SessionEvent(
                 id: id,
                 agentId: "approval",
@@ -114,6 +125,43 @@ final class AgentStore: ObservableObject {
             ))
         case .response, .error:
             break
+        }
+    }
+
+    private func upsertApproval(id: String, toolName: String, inputSummary: String) {
+        let now = Date()
+        let approval = PendingApproval(
+            id: id,
+            agentId: "approval",
+            toolName: toolName,
+            inputSummary: inputSummary,
+            receivedAt: now,
+            expiresAt: now.addingTimeInterval(Self.approvalTTL),
+            status: .pending
+        )
+
+        pendingApprovals.removeAll { $0.id == id }
+        pendingApprovals.insert(approval, at: 0)
+    }
+
+    private func resolveApproval(_ approval: PendingApproval, decision: ApprovalDecision, reason: String?) {
+        guard let index = pendingApprovals.firstIndex(where: { $0.id == approval.id }),
+              pendingApprovals[index].isActionable else {
+            return
+        }
+
+        pendingApprovals[index].status = decision == .allow ? .allowed : .blocked
+        appendEvent(SessionEvent(
+            id: "\(approval.id)-\(decision.rawValue)",
+            agentId: approval.agentId,
+            date: Date(),
+            title: decision == .allow ? "Approval allowed" : "Approval blocked",
+            detail: reason ?? approval.toolName,
+            surface: nil
+        ))
+
+        Task {
+            try? await bridge.sendApproval(id: approval.id, decision: decision, reason: reason)
         }
     }
 
