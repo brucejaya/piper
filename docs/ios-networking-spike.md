@@ -4,17 +4,21 @@
 
 Piper's iOS app needs native iOS UX, Keychain, StoreKit, notifications, and background behavior, while the current open transport uses HyperDHT from the Holepunch ecosystem.
 
-The recommended first implementation path is:
+The app transport implementation is not chosen yet. The product commitment is a polished native iPhone app that feels reliable under normal mobile constraints; the transport must serve that product goal rather than force a fragile fully peer-to-peer mobile experience.
+
+The current implementation path is:
 
 1. Build the app shell in native SwiftUI.
 2. Store the iOS peer identity in Keychain.
-3. Run the HyperDHT/Piper protocol client in a small Bare/Pear-end bridge.
-4. Communicate between SwiftUI state and the bridge through a narrow RPC boundary.
+3. Keep SwiftUI state behind a narrow `PiperBridge` boundary.
+4. Keep the JSONL protocol codec transport-agnostic.
 5. Keep push notifications as wake hints, not command relay.
 
-This keeps the product native while avoiding a premature rewrite of HyperDHT in Swift.
+This keeps the product native while deferring the transport decision until it can be proven on macOS/iOS with App Store, backgrounding, reliability, and maintenance constraints in view.
 
 ## Source Grounding
+
+Bare/Pear remains one candidate because the current open transport is JavaScript/Holepunch-native. It is not a product decision.
 
 The official Pear docs describe Bare as a JavaScript runtime for desktop and mobile, with embedding and cross-device support as core use cases:
 
@@ -38,10 +42,9 @@ The HyperDHT docs also note that some NAT combinations still require relay behav
 ```mermaid
 flowchart LR
   SwiftUI["SwiftUI app shell"] --> State["AgentStore / SessionStore"]
-  State --> Bridge["PiperBridge RPC"]
-  Bridge --> Bare["Bare/Pear-end runtime"]
-  Bare --> HyperDHT["HyperDHT client"]
-  HyperDHT --> Agent["Piper agent instance"]
+  State --> Bridge["PiperBridge"]
+  Bridge --> Transport["iOS transport adapter"]
+  Transport --> Agent["Piper agent instance"]
   SwiftUI --> Keychain["Keychain peer seed"]
   APNS["APNs wake hint"] --> SwiftUI
 ```
@@ -75,32 +78,37 @@ Bridge events should mirror `docs/protocol.md`:
 
 The Swift side should not know HyperDHT internals. It should know peer keys, connection states, request ids, and typed protocol messages.
 
-The app scaffold includes `PiperWireCodec`, a transport-agnostic JSONL codec for these messages. The real HyperDHT bridge should reuse that codec so SwiftUI state, tests, and the eventual Bare/Pear-end networking path share the same protocol boundary.
+The app scaffold includes `PiperWireCodec`, a transport-agnostic JSONL codec for these messages. Any real transport implementation should reuse that codec so SwiftUI state, tests, and the eventual network path share the same protocol boundary.
 
 ## First Spike Milestones
 
 1. Create a minimal SwiftUI app target. Done as an XcodeGen scaffold in `apps/ios/`.
-2. Generate and persist a peer seed in Keychain. Started with a `PeerIdentityStore` protocol and in-memory dev implementation; Keychain implementation is a Mac follow-up.
-3. Run a Bare/Pear-end bundle on iOS simulator.
-4. From the bridge, connect to a local Piper testnet instance by public key.
+2. Generate and persist a peer seed in Keychain. Done in scaffold; still requires Mac validation.
+3. Select and prove one iOS transport adapter.
+4. From that adapter, connect to a local Piper testnet instance by public key.
 5. Parse `hello` and `presence`.
 6. Send `get_state` and correlate `response`.
 7. Send one `prompt` or `steer` request.
 8. Tear down cleanly when the app enters background or the user disconnects.
 
-## Fallback Options
+## Transport Candidates
 
-If the Bare bridge cannot satisfy App Store, backgrounding, or operational needs:
+The viable candidates are:
 
-- Keep the SwiftUI app shell and replace the bridge with a native Swift transport implementation.
-- Use a local network-only development bridge while implementing native HyperDHT pieces.
-- Limit the first TestFlight to foreground P2P sessions and push wake hints until background behavior is proven.
+- Native Swift transport implementation.
+- Embedded library or runtime that can carry HyperDHT reliably on iOS.
+- Bare/Pear-end bridge, if packaging, backgrounding, and App Store review prove acceptable.
+- Local network-only development bridge while implementing the production transport.
+- Narrow service-assisted wake or rendezvous components that do not become command relay, protocol authority, or session store.
 
-Do not introduce a hosted command relay as a shortcut. That would violate Piper's trust model.
+Do not introduce a hosted command relay as a shortcut. That would violate Piper's trust model and weaken the open protocol story.
 
 ## Open Questions
 
-- Can the Bare/Pear-end bridge be packaged cleanly for App Store review?
+- Which iOS transport makes the official app feel most native, reliable, and maintainable?
+- Can a Bare/Pear-end bridge be packaged cleanly for App Store review if we test it?
+- Can a native Swift transport carry enough of HyperDHT without excessive rewrite risk?
+- Is a narrow service-assisted approach needed for mobile reliability without centralizing commands?
 - How should the bridge expose logs and crash diagnostics without leaking agent content?
 - What is the minimum background behavior iOS will allow before push wake hints are required?
 - Can simulator tests run against `scripts/selftest.ts` style local bootstrap nodes?

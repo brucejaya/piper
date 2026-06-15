@@ -146,7 +146,7 @@ Recent community research suggests the strongest wedge is trust. Self-hosters ar
 
 ## Open Questions
 
-- Which iOS networking strategy should carry HyperDHT: native Swift implementation, embedded library, local bridge, or fallback transport?
+- Which iOS networking strategy best preserves a polished native app experience while carrying the Piper protocol: native Swift implementation, embedded library/runtime, local bridge, narrow service-assisted path, or another fallback transport?
 - How much tool input can be shown safely in approval notifications before leaking sensitive context?
 - What retention period should local history use by default?
 - Should the free app tier allow one paired agent for trial, or should trialing rely on subscription mechanics?

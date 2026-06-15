@@ -92,7 +92,7 @@ Recent community research reinforces that the first adoption hurdle is trust rat
 
 - KTD1. Open core, commercial client: The protocol, transport, CLI, and docs stay open because adoption is the infrastructure play; the official iOS app captures commercial value through experience quality.
 - KTD2. Native SwiftUI app first: The paid product is iOS-only at launch because the unmet need is mobile, and native purchase, notification, backgrounding, and keychain integration matter more than cross-platform reuse.
-- KTD3. P2P remains the default connection path: HyperDHT direct encrypted connectivity stays the product identity; hosted components are limited to push and purchase support where Apple platform constraints require them.
+- KTD3. The open protocol remains peer-addressed and encrypted: HyperDHT direct connectivity stays the open-core identity, while the official iOS app transport remains a product-quality implementation decision. Hosted components must not become command relay, protocol authority, or session store.
 - KTD4. Protocol versioning before app scale: The wire schema needs explicit version negotiation and compatibility docs before multiple app releases depend on it.
 - KTD5. Pairing remains manual and inspectable: QR codes and copy/paste can improve UX, but the security model remains public-key pairing with visible trust decisions.
 - KTD6. Local-first session history: The iOS app should cache useful conversation and event history locally after connection, while the authoritative agent state remains with the agent instance.
@@ -229,7 +229,7 @@ Push notifications are the main exception to pure P2P. iOS cannot maintain arbit
 
 1. **Foundation:** U1 through U4 make the open core safe enough to build clients against.
 2. **Trust and docs:** U2, U5, and U11 make the protocol understandable and implementable by others.
-3. **Mobile alpha:** U6 and U7 produce a TestFlight app for direct P2P monitoring and steering.
+3. **Mobile alpha:** U6 and U7 produce a TestFlight app for mobile monitoring and steering over the selected Piper transport.
 4. **Mobile beta:** U8 and U9 add approval notifications and resilient local history.
 5. **Commercial beta:** U10 adds StoreKit products, entitlement state, and purchase restore.
 6. **Launch hardening:** U11 and U12 prepare public open-source release, App Store release, support, and security posture.
@@ -259,7 +259,7 @@ Push registration creates a second relationship between an agent instance and an
 ## Risks & Dependencies
 
 - **iOS background limits:** Direct P2P sockets will not behave like desktop daemons in the background. Mitigation: design push as wake-and-reconnect rather than always-on transport.
-- **HyperDHT Swift support:** A native Swift client may need a bridge, embedded library, or thin local networking layer if direct HyperDHT support is immature. Mitigation: prototype this before committing to UI-heavy work.
+- **iOS transport fit:** The official app must feel like a polished native iPhone app, not a fragile transport demo. A native Swift client may need a bridge, embedded library, narrow service-assisted path, or a transport fallback if direct HyperDHT support is immature or mobile-hostile. Mitigation: prototype transport candidates before treating any one option as chosen.
 - **Protocol drift:** Pi agent events may change as Pi evolves. Mitigation: version Piper's envelope and document which event fields are forwarded verbatim.
 - **Approval safety:** Blocking local execution on remote decisions can frustrate users or create hangs. Mitigation: keep remote approvals opt-in until timeout and stale-state behavior are well tested.
 - **App Store payments:** StoreKit and receipt validation add platform complexity. Mitigation: keep entitlement logic isolated from protocol permission logic.
