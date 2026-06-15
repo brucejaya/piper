@@ -31,6 +31,14 @@ struct AgentDashboardView: View {
                 }
             }
             .navigationTitle("Piper")
+            .toolbar {
+                NavigationLink {
+                    SettingsView()
+                } label: {
+                    Image(systemName: "gearshape")
+                }
+                .accessibilityLabel("Settings")
+            }
         }
     }
 }

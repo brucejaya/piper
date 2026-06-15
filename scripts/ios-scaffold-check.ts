@@ -13,6 +13,7 @@ const requiredFiles = [
   "apps/ios/PiperApp/Billing/BillingClient.swift",
   "apps/ios/PiperApp/Billing/BillingModels.swift",
   "apps/ios/PiperApp/Billing/BillingStore.swift",
+  "apps/ios/PiperApp/Billing/PreviewBillingClient.swift",
   "apps/ios/PiperApp/Billing/StoreKitBillingClient.swift",
   "apps/ios/PiperApp/Models/PiperProtocol.swift",
   "apps/ios/PiperApp/Persistence/AgentRegistryStore.swift",
@@ -23,10 +24,12 @@ const requiredFiles = [
   "apps/ios/PiperApp/Identity/KeychainPeerIdentityStore.swift",
   "apps/ios/PiperApp/State/AgentStore.swift",
   "apps/ios/PiperApp/Views/AgentDashboardView.swift",
+  "apps/ios/PiperApp/Views/SettingsView.swift",
   "apps/ios/PiperApp/Views/SessionView.swift",
   "apps/ios/PiperAppTests/AgentStoreTests.swift",
   "apps/ios/PiperAppTests/AgentRegistryStoreTests.swift",
   "apps/ios/PiperAppTests/BillingTests.swift",
+  "apps/ios/PiperAppTests/BillingStoreTests.swift",
   "apps/ios/PiperAppTests/PiperProtocolTests.swift",
   "apps/ios/PiperAppTests/SessionHistoryStoreTests.swift",
   "docs/pricing.md",
@@ -50,6 +53,10 @@ assert.match(app, /StoreKitBillingClient/);
 const billing = readFileSync(join(root, "apps/ios/PiperApp/Billing/BillingModels.swift"), "utf8");
 assert.match(billing, /app\.piper\.ios\.lifetime/);
 assert.match(billing, /unlocksOfficialApp/);
+
+const settingsView = readFileSync(join(root, "apps/ios/PiperApp/Views/SettingsView.swift"), "utf8");
+assert.match(settingsView, /Restore Purchases/);
+assert.match(settingsView, /Pairing and agent access still require the agent allowlist/);
 
 const history = readFileSync(join(root, "apps/ios/PiperApp/Persistence/SessionHistoryStore.swift"), "utf8");
 assert.match(history, /FileSessionHistoryStore/);
