@@ -4,6 +4,7 @@ import {
   createPushWakePayload,
   validatePushWakePayload,
 } from "../services/push/src/payload.js";
+import { PushRegistrationStore, hashDeviceToken } from "../services/push/src/registration.js";
 
 function checkPushWakePayloads() {
   const payload = createPushWakePayload({
@@ -41,4 +42,42 @@ function checkPushWakePayloads() {
 }
 
 checkPushWakePayloads();
+
+function checkPushRegistrations() {
+  const store = new PushRegistrationStore();
+  const peerKey = "a".repeat(64);
+  const deviceToken = "ios-device-token-abcdef";
+
+  const registration = store.register({
+    agent: "agent-ab12cd",
+    peerKey,
+    deviceToken,
+    now: 1792080000000,
+  });
+  const duplicate = store.register({
+    agent: "agent-ab12cd",
+    peerKey: peerKey.toUpperCase(),
+    deviceToken,
+    now: 1792080001000,
+  });
+
+  assert.equal(duplicate.id, registration.id);
+  assert.equal(registration.peerKey, peerKey);
+  assert.equal(registration.deviceTokenHash, hashDeviceToken(deviceToken));
+  assert.equal((registration as any).deviceToken, undefined);
+  assert.equal(store.activeForAgent("agent-ab12cd").length, 1);
+  assert.equal(store.revokePeer("agent-ab12cd", peerKey), 1);
+  assert.equal(store.activeForAgent("agent-ab12cd").length, 0);
+
+  assert.throws(() => store.register({
+    agent: "agent-ab12cd",
+    peerKey: "not-a-key",
+    deviceToken,
+  }), /peer key/);
+  assert.throws(() => hashDeviceToken("short"), /too short/);
+
+  console.log("[ok] push registrations are peer-bound, hashed, idempotent, and revocable");
+}
+
+checkPushRegistrations();
 console.log("\nPUSH CHECKS PASSED");

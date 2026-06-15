@@ -29,6 +29,15 @@ Push registration creates a relationship between an iOS installation and an agen
 
 Users must be able to revoke push registration from the app and from the agent side. Revoking push should not remove protocol pairing unless the user also revokes the peer key.
 
+Registration records should store:
+
+- Short non-secret agent identifier.
+- iOS peer public key.
+- Hash of the APNs device token.
+- Platform and creation/revocation timestamps.
+
+Registration records should not store raw APNs device tokens in logs, payloads, or exported diagnostics.
+
 ## Implementation Notes
 
-The current repository defines the wake payload contract in `services/push/src/payload.ts`. A later APNs service should consume that contract and keep all command, approval, auth, and session data on the peer-to-peer Piper channel.
+The current repository defines the wake payload contract in `services/push/src/payload.ts` and the registration boundary in `services/push/src/registration.ts`. A later APNs service should consume those contracts and keep all command, approval, auth, and session data on the peer-to-peer Piper channel.

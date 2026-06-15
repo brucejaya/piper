@@ -19,6 +19,8 @@ Paid-app support may introduce narrow hosted services for:
 
 Hosted services must not store prompts, tool inputs, session transcripts, credentials, cookies, refresh tokens, or bearer tokens.
 
+Push registration may store a short agent identifier, the iOS peer public key, a hashed APNs device token, platform, and revocation timestamps. Raw APNs device tokens should not appear in logs, payloads, or exported diagnostics.
+
 ## Purchases
 
 StoreKit entitlement state unlocks official app features. It does not grant access to an agent, pair a peer, or modify an agent allowlist.

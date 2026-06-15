@@ -37,6 +37,7 @@ const requiredFiles = [
   "docs/privacy.md",
   "docs/push-notifications.md",
   "docs/support.md",
+  "services/push/src/registration.ts",
 ];
 
 for (const file of requiredFiles) {
@@ -67,6 +68,10 @@ assert.match(appStoreRelease, /app\.piper\.ios\.lifetime/);
 const support = readFileSync(join(root, "docs/support.md"), "utf8");
 assert.match(support, /Pairing Problems/);
 assert.match(support, /Purchase state does not pair agents/);
+
+const pushRegistration = readFileSync(join(root, "services/push/src/registration.ts"), "utf8");
+assert.match(pushRegistration, /PushRegistrationStore/);
+assert.match(pushRegistration, /hashDeviceToken/);
 
 const history = readFileSync(join(root, "apps/ios/PiperApp/Persistence/SessionHistoryStore.swift"), "utf8");
 assert.match(history, /FileSessionHistoryStore/);
