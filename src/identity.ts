@@ -21,6 +21,17 @@ export function piperDir(cwd: string): string {
  * share it; pair peers against it.
  */
 export function loadOrCreateIdentity(cwd: string): KeyPair {
+  const fromEnv = process.env.PIPER_SEED?.trim();
+  if (fromEnv && /^[0-9a-fA-F]{64}$/.test(fromEnv)) {
+    const seed = Buffer.from(fromEnv, "hex");
+    const kp = DHT.keyPair(seed);
+    const pubHex = kp.publicKey.toString("hex");
+    process.stdout.write(
+      `piper: identity from PIPER_SEED env (public key: ${pubHex})\n`,
+    );
+    return kp;
+  }
+
   const dir = piperDir(cwd);
   mkdirSync(dir, { recursive: true });
   const seedPath = join(dir, "seed");
