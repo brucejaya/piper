@@ -1,28 +1,70 @@
 {
   "name": "piper",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "sshd for Pi — a remote control surface for Pi coding agent instances over HyperDHT. Per-instance keypair identity, manual-pairing allowlist, Pi RPC tunneled over an encrypted P2P socket.",
   "type": "module",
-  "pi": {
-    "extensions": [
-      "./src/index.ts"
-    ]
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./extension": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./transport": {
+      "types": "./dist/transport.d.ts",
+      "import": "./dist/transport.js"
+    },
+    "./protocol": {
+      "types": "./dist/protocol.d.ts",
+      "import": "./dist/protocol.js"
+    },
+    "./allowlist": {
+      "types": "./dist/allowlist.d.ts",
+      "import": "./dist/allowlist.js"
+    },
+    "./identity": {
+      "types": "./dist/identity.d.ts",
+      "import": "./dist/identity.js"
+    }
   },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "peer": "tsx test-peer/cli.ts",
+    "peer-session": "tsx scripts/peer-session.ts",
+    "localdht": "tsx scripts/localdht.ts",
+    "local-flow-test": "tsx scripts/local-flow-test.ts",
+    "local-real-test": "tsx scripts/local-real-test.ts",
     "clitest": "tsx scripts/clitest.ts",
     "ioscheck": "tsx scripts/ios-scaffold-check.ts",
-    "pushtest": "tsx scripts/pushtest.ts",
     "selftest": "tsx scripts/selftest.ts",
     "livetest": "tsx scripts/livetest.ts",
     "tooltest": "tsx scripts/tooltest.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build": "tsc -p tsconfig.build.json",
+    "prepare": "npm run build",
+    "prepack": "npm run build",
+    "test": "npm run clitest && npm run selftest && npm run local-flow-test && npm run local-real-test"
   },
   "dependencies": {
     "hyperdht": "^6.32.0"
   },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "^0.79.1"
+  },
+  "peerDependenciesMeta": {
+    "@earendil-works/pi-coding-agent": {
+      "optional": true
+    }
+  },
   "devDependencies": {
-    "@mariozechner/pi-coding-agent": "^0.73.1",
+    "@earendil-works/pi-coding-agent": "^0.79.1",
     "@types/node": "^25.9.3",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3"

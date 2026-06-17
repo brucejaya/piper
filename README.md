@@ -9,6 +9,21 @@ Piper is the open networking and trust layer. Native apps can wrap the same core
 functions later; the included terminal `test-peer` is the reference manager
 until those clients exist.
 
+## Install
+
+```bash
+npm install piper
+```
+
+or, from a local checkout:
+
+```bash
+npm pack
+npm install ./piper-0.1.0.tgz
+```
+
+The package is ESM-only. Public sub-paths: `piper` (default extension), `piper/extension`, `piper/transport`, `piper/protocol`, `piper/allowlist`, `piper/identity`. `@mariozechner/pi-coding-agent` is an optional peer dependency — only required if you load the extension. Reusable pieces (Transport, protocol codec, allowlist, identity) have no peer-dep requirement.
+
 ## How It Works
 
 - **Identity** - each instance has a persistent keypair in `.pi/piper/`. Its
@@ -29,15 +44,13 @@ See [docs/protocol.md](docs/protocol.md) for the wire protocol and
 [docs/security.md](docs/security.md) for the trust model. Pairing and revocation
 details live in [docs/pairing.md](docs/pairing.md).
 
-## Install the Extension
+## Develop
 
 ```bash
 npm install
 npm run typecheck
-npm run clitest
-npm run pushtest
-npm run selftest
-npm run livetest
+npm run test       # clitest + selftest, no network, no provider
+npm run build      # compiles to dist/ with .d.ts
 ```
 
 `clitest` checks the reference manager parser and identity persistence without
@@ -46,37 +59,55 @@ opening a network socket.
 `livetest` runs the real extension inside a real Pi SDK session backed by a real
 provider. It uses the isolated agent dir at `.pi/agent`; configure provider
 auth in `.pi/agent/auth.json`.
-
 Then point Pi at the extension. Either add it to Pi settings
 (`~/.pi/agent/settings.json`):
 
 ```json
-{ "extensions": ["C:/Users/you/Documents/Misc/Code/Piper/src/index.ts"] }
+{ "extensions": ["piper/extension"] }
 ```
 
 Or load it ad hoc for a session:
 
 ```bash
-pi -e "C:/Users/you/Documents/Misc/Code/Piper/src/index.ts"
+pi -e "piper/extension"
+```
+
+If you are hacking on this repo and want the dev source, point Pi at it directly:
+
+```bash
+pi -e "C:/path/to/Piper/src/index.ts"
 ```
 
 On start it prints the instance key and begins listening.
 
-## Pair, Revoke, and Drive
+## Pair and Drive
+
+Three subcommands cover the common flow:
 
 ```bash
-# 1. In another terminal, get the test-peer's public key.
-npm run peer
-# -> prints: <peer-key>
+# 1. Get the peer's public key.
+npm run peer -- keys
+# -> <peer-key>
 
 # 2. In the Pi session running the extension, pair that key.
 /piper-allow <peer-key>
 
-# 3. Connect the peer to the instance and start prompting.
-npm run peer -- <instance-key>
+# 3. From the peer side, drive the instance.
+npm run peer -- use <instance-key>                 # pin the default
+npm run peer -- send prompt "do thing"             # one-shot
+npm run peer -- request get-state                  # one-shot query
+npm run peer -- watch <instance-key>               # stream events
+npm run peer -- repl <instance-key>                # interactive REPL
 ```
 
-Useful Pi commands:
+For scripted callers (a local coding agent driving the operator), pass
+`--json` to get one NDJSON envelope per line on stdout, errors as
+`{"t":"error","reason":"..."}` on stderr, exit code 1 on failure.
+
+Full surface lives in `test-peer/cli.ts` and is documented in
+`docs/local-pairing.md` under "CLI surface".
+
+Useful Pi commands (instance side):
 
 ```text
 /piper
