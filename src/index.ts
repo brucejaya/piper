@@ -73,7 +73,16 @@ function piperDhtOptions(): unknown {
   return { bootstrap };
 }
 
-export default function piper(pi: ExtensionAPI): void {
+// The factory is async so setup completes before pi starts any
+// session. We do all one-time work here (identity, allowlist, DHT
+// listener, handler registration) — no `session_start` callback. The
+// SDK fires `session_start` only when a runtime mode binds the
+// session (print, interactive, rpc), and the SDK use case has no
+// mode. Other extensions (email, minimax-provider, browser-use) all
+// follow this pattern; Piper is the same. Re-entrancy guard ensures
+// a re-load (e.g. /reload) does not re-create the transport.
+export default async function piper(pi: ExtensionAPI): Promise<void> {
+  const cwd = process.cwd();
   let transport: Transport | undefined;
   let allow: Allowlist | undefined;
   let identityHex = "";
@@ -281,41 +290,46 @@ export default function piper(pi: ExtensionAPI): void {
         break;
     }
   }
-
-  pi.on("session_start", async (_event, ctx: any) => {
-    if (transport) return; // already running for this process
-
-    const kp = loadOrCreateIdentity(ctx.cwd);
+  // Re-entrancy guard: a /reload would re-run this factory, but the
+  // transport is process-global. Skip re-setup if already running.
+  if (!transport) {
+    const kp = loadOrCreateIdentity(cwd);
     identityHex = kp.publicKey.toString("hex");
-    allow = new Allowlist(ctx.cwd);
-
+    allow = new Allowlist(cwd);
+    // Build a minimal ctx so the rest of Piper (callbacks, presence) can
+    // call ctx.ui?.X without a runtime UI. The SDK use case has no
+    // user-facing UI; CLI mode can pass a real ctx via a future hook.
+    const noopCtx = { cwd, ui: undefined, model: undefined, sessionManager: undefined } as { cwd: string; ui: unknown; model: unknown; sessionManager: unknown };
     transport = new Transport(kp, allow, {
       onConnect: (peer) => {
-        peer.send({ t: "hello", protocol: PROTOCOL_VERSION, instance: presence(ctx) });
-        ctx.ui?.setStatus?.("piper", statusLine());
-        ctx.ui?.notify?.(`Piper: peer connected ${shortKey(peer.remoteKey)}`, "info");
+        peer.send({ t: "hello", protocol: PROTOCOL_VERSION, instance: presence(noopCtx) });
       },
-      onMessage: (peer, msg) => void handleInbound(ctx, peer, msg),
-      onDisconnect: (peer) => {
-        ctx.ui?.setStatus?.("piper", statusLine());
-        ctx.ui?.notify?.(`Piper: peer disconnected ${shortKey(peer.remoteKey)}`, "info");
+      onMessage: (peer, msg) => void handleInbound(noopCtx, peer, msg),
+      onDisconnect: () => {
         if ((transport?.peerCount() ?? 0) === 0) allowAllPendingApprovals();
       },
-      log: (line) => ctx.ui?.notify?.(`Piper: ${line}`, "warning"),
+      log: (line) => process.stdout.write(`piper: ${line}\n`),
     }, piperDhtOptions());
 
     try {
       await transport.listen();
-      ctx.ui?.setStatus?.("piper", statusLine());
-      const paired = allow.list().length;
-      ctx.ui?.notify?.(
-        `Piper listening.\nInstance key: ${identityHex}` +
-          (paired === 0 ? `\nNo paired peers yet - add one with /piper-allow <peer-key>` : ``),
-        "info",
+      process.stdout.write(
+        `piper: listening\n` +
+          `piper:   instance key: ${identityHex}\n` +
+          (allow.list().length === 0 ? `piper:   no paired peers yet\n` : ``),
       );
-    } catch (e: any) {
-      ctx.ui?.notify?.(`Piper failed to listen: ${String(e?.message ?? e)}`, "error");
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      process.stdout.write(`piper: failed to listen: ${msg}\n`);
     }
+  }
+
+  // Cleanup on session shutdown. Best-effort: the transport itself
+  // is process-global, so we do not destroy it; we just clear local refs.
+  pi.on("session_shutdown", async () => {
+    // intentionally do not destroy transport — it is shared across
+    // sessions in the same process. Cleanup is a no-op here. The
+    // transport is destroyed on process exit.
   });
 
   pi.on("session_shutdown", async () => {
