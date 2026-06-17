@@ -54,6 +54,21 @@ function positiveEnvInt(name: string, fallback: number): number {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
 
+// Delta batching: Pi emits one message_update per token (thinking +
+// content). Forwarded verbatim this produces hundreds of NDJSON
+// lines per second. We keep the latest state per responseId and flush
+// on a timer (DELTA_BATCH_MS) plus on natural breakpoints. Set
+// PIPER_DELTA_BATCH_MS=0 to disable.
+const DELTA_BATCH_MS = positiveEnvInt("PIPER_DELTA_BATCH_MS", 100);
+const FLUSH_ON_EVENTS = new Set([
+  "message_end",
+  "tool_execution_start",
+  "tool_execution_update",
+  "tool_execution_end",
+  "turn_end",
+  "agent_end",
+]);
+
 /**
  * Optional override for the DHT bootstrap nodes. Defaults to Holepunch's public
  * network. Set PIPER_BOOTSTRAP="host:port,host:port" to use a private bootstrap
@@ -91,8 +106,32 @@ export default async function piper(pi: ExtensionAPI): Promise<void> {
   const pendingApprovals = new Map<string, { resolve: (decision: "allow" | "block") => void; timer: NodeJS.Timeout }>();
   const pendingAuthRequests = new Map<string, { domain: string; reason: string }>();
 
+  // Delta batching state. We keep the latest message_update per
+  // responseId and flush on a timer (DELTA_BATCH_MS) plus on natural
+  // breakpoints. The latest event wins because Pi's message object is
+  // already cumulative.
+  interface PendingDelta { event: unknown; surface: unknown }
+  const pendingDeltas = new Map<string, PendingDelta>();
+  let deltaFlushTimer: ReturnType<typeof setTimeout> | null = null;
+  function flushPendingDeltas(): void {
+    if (deltaFlushTimer) { clearTimeout(deltaFlushTimer); deltaFlushTimer = null; }
+    if (pendingDeltas.size === 0) return;
+    for (const [, pending] of pendingDeltas) {
+      transport?.broadcast({ t: "event", event: pending.event });
+      if (pending.surface) broadcastSurface(pending.surface as SurfaceEnvelope);
+    }
+    pendingDeltas.clear();
+  }
+  function scheduleDeltaFlush(): void {
+    if (DELTA_BATCH_MS === 0) return;
+    if (deltaFlushTimer) return;
+    deltaFlushTimer = setTimeout(() => {
+      deltaFlushTimer = null;
+      flushPendingDeltas();
+    }, DELTA_BATCH_MS);
+  }
   function presence(ctx: any): InstancePresence {
-    let model: string | undefined;
+     let model: string | undefined;
     let sessionFile: string | undefined;
     try {
       if (ctx.model) model = `${ctx.model.provider}/${ctx.model.id}`;
@@ -344,10 +383,23 @@ export default async function piper(pi: ExtensionAPI): Promise<void> {
   for (const name of FORWARDED_EVENTS) {
     pi.on(name as any, async (event: any, ctx: any) => {
       if (name === "agent_start") streaming = true;
-      if (name === "agent_end") streaming = false;
-      transport?.broadcast({ t: "event", event: safeEvent(name, event) });
+      if (name === "agent_end") {
+        streaming = false;
+        flushPendingDeltas();
+      }
       const surface = surfaceFromEvent(name, event, ctx);
-      if (surface) broadcastSurface(surface);
+      if (name === "message_update" && DELTA_BATCH_MS > 0) {
+        // Buffer by responseId; Pi's message object is already
+        // cumulative, so the latest one wins. Surface too, so the
+        // surfaceFromEvent call isn't wasted.
+        const id = (event?.message?.responseId as string) ?? "__anon__";
+        pendingDeltas.set(id, { event: safeEvent(name, event), surface });
+        scheduleDeltaFlush();
+      } else {
+        if (FLUSH_ON_EVENTS.has(name)) flushPendingDeltas();
+        transport?.broadcast({ t: "event", event: safeEvent(name, event) });
+        if (surface) broadcastSurface(surface);
+      }
       if (name === "agent_start" || name === "agent_end") {
         transport?.broadcast({ t: "presence", instance: presence(ctx) });
         ctx.ui?.setStatus?.("piper", statusLine());
