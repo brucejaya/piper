@@ -45,7 +45,10 @@ export class Transport {
   }
 
   private onConnection(socket: any): void {
+    // Reload allowlist from disk so admin API changes take effect without restart.
+    this.allow.load();
     const remoteKey: string = socket.remotePublicKey ? socket.remotePublicKey.toString("hex") : "";
+
     if (!remoteKey || !this.allow.has(remoteKey)) {
       this.handlers.log(`rejected un-paired peer ${shortKey(remoteKey)}`);
       socket.destroy();
