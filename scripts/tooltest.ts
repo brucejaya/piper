@@ -18,7 +18,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import DHT from "hyperdht";
 import createTestnet from "hyperdht/testnet";
-import { AuthStorage, ModelRegistry, SessionManager, DefaultResourceLoader, createAgentSession } from "@mariozechner/pi-coding-agent";
+import { AuthStorage, ModelRegistry, SessionManager, DefaultResourceLoader, createAgentSession } from "@earendil-works/pi-coding-agent";
 import { createLineDecoder, encode } from "../src/protocol.js";
 
 const PROJECT = process.cwd();
@@ -31,7 +31,11 @@ process.env.PIPER_APPROVALS = "remote"; // must be set before the extension modu
 const ALLOW_MARKER = "PIPER_TOOL_OK";
 const BLOCK_MARKER = "PIPER_BLOCK_RAN";
 
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const sleep = (ms: number): Promise<void> => {
+  const { promise, resolve } = Promise.withResolvers<void>();
+  setTimeout(resolve, ms);
+  return promise;
+};
 
 async function main() {
   const testnet = await createTestnet(3);

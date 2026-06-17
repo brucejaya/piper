@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { hostname } from "node:os";
-import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
+import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Allowlist, PEER_KEY_RE } from "./allowlist.js";
 import { loadOrCreateIdentity } from "./identity.js";
 import {
@@ -369,6 +369,10 @@ export default function piper(pi: ExtensionAPI): void {
         },
       }));
       const decision = await new Promise<"allow" | "block">((resolve) => {
+        // Fail-open on timeout: if no manager answers within APPROVAL_TIMEOUT_MS
+        // the tool runs as if it had been approved locally. This keeps a flaky
+        // network from blocking the agent forever. Last-peer-disconnect is also
+        // fail-open via onDisconnect -> allowAllPendingApprovals().
         const timer = setTimeout(() => {
           resolvePendingApproval(id, "allow");
         }, APPROVAL_TIMEOUT_MS);

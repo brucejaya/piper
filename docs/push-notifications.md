@@ -42,4 +42,7 @@ Registration records should not store raw APNs device tokens in logs, payloads, 
 
 ## Implementation Notes
 
-The current repository defines the wake payload contract in `services/push/src/payload.ts` and the registration boundary in `services/push/src/registration.ts`. A later APNs service should consume those contracts and keep all command, approval, auth, and session data on the peer-to-peer Piper channel.
+The wake payload and registration contracts in this document are consumed by the iOS push service and the agent-side push sender (which lives outside this package). The shape is:
+
+- `PushWakePayload` (versioned, see "Payload Boundary" above; max 512 bytes; rejected if any key matches `password|passkey|otp|token|cookie|secret|credential|transcript|prompt|input|message|content`).
+- `PushRegistration` records keyed by `(agent, peerPublicKey, deviceTokenHash)`. The raw APNs device token is never persisted; only its SHA-256. Registrations are idempotent on those three fields, and `revokePeer(agent, peerKey)` removes every active registration for that peer.

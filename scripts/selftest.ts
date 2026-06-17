@@ -64,7 +64,9 @@ async function waitFor(cond: () => boolean, ms = 8000, what = "condition") {
   const start = Date.now();
   while (!cond()) {
     if (Date.now() - start > ms) throw new Error(`timeout waiting for ${what}`);
-    await new Promise((r) => setTimeout(r, 50));
+    const { promise, resolve } = Promise.withResolvers<void>();
+    setTimeout(resolve, 50);
+    await promise;
   }
 }
 

@@ -59,8 +59,9 @@ export class Transport {
       send: (msg) => {
         try {
           socket.write(encode(msg));
-        } catch {
-          // Peer write failed; close will clean up.
+        } catch (err) {
+          // Surface the failure to the consumer; 'close' still tears down the peer.
+          this.handlers.log(`write to peer ${shortKey(remoteKey)} failed: ${(err as Error)?.message ?? err}`);
         }
       },
     };
@@ -89,6 +90,10 @@ export class Transport {
 
   connectedKeys(): string[] {
     return [...this.peers.values()].map((p) => p.peer.remoteKey);
+  }
+
+  connectedPeers(): Peer[] {
+    return [...this.peers.values()].map((p) => p.peer);
   }
 
   disconnectKey(remoteKey: string): number {
