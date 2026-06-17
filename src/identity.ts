@@ -31,6 +31,15 @@ export function loadOrCreateIdentity(cwd: string): KeyPair {
   } else {
     seed = randomBytes(32);
     writeFileSync(seedPath, seed.toString("hex"), { mode: 0o600 });
+    // First-run notice. The seed is a long-lived private key — anyone who
+    // reads it can impersonate this Piper instance. Surface this once so
+    // users don't accidentally commit it.
+    const pubHex = DHT.keyPair(seed).publicKey.toString("hex");
+    process.stdout.write(
+      `piper: created identity at ${seedPath}\n` +
+        `piper:   public key: ${pubHex}\n` +
+        `piper:   add '.pi/piper/' to your .gitignore — the seed is sensitive\n`,
+    );
   }
   return DHT.keyPair(seed);
 }

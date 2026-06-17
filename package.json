@@ -2,7 +2,11 @@
   "name": "piper",
   "version": "0.1.0",
   "description": "sshd for Pi — a remote control surface for Pi coding agent instances over HyperDHT. Per-instance keypair identity, manual-pairing allowlist, Pi RPC tunneled over an encrypted P2P socket.",
+  "keywords": ["pi-package"],
   "type": "module",
+  "pi": {
+    "extensions": ["./dist/index.js"]
+  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
