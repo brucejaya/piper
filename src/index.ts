@@ -371,11 +371,10 @@ export default async function piper(pi: ExtensionAPI): Promise<void> {
     // transport is destroyed on process exit.
   });
 
-  pi.on("session_shutdown", async () => {
-    const t = transport;
-    transport = undefined;
-    await t?.destroy();
-  });
+  // Transport is process-global and shared across sessions. The no-op
+  // handler above is the only session_shutdown handler. Do not add
+  // a destructive one — the transport must persist between wakes
+  // so peers can connect at any time, not just during a wake.
 
   // Forward Pi's native event stream to all connected managers, and push a
   // presence update whenever the instance flips between busy and idle so a
